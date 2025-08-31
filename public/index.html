@@ -1,0 +1,144 @@
+<!doctype html>
+<meta charset="utf-8" />
+<title>最小キャンバス（クリックで色）</title>
+<style>
+  body { font-family: system-ui, sans-serif; margin: 16px; }
+  #wrap { display: flex; gap: 16px; align-items: center; margin-bottom: 8px; flex-wrap: wrap; }
+  canvas { border: 1px solid #ccc; image-rendering: pixelated; cursor: crosshair; }
+  .hint { color: #666; font-size: 12px; }
+</style>
+<div id="wrap">
+  <div>
+    色 <input type="color" id="color" value="#ff0000">
+  </div>
+  <div>クールダウン: <span id="cd">OK</span></div>
+  <button id="clear">全消し</button>
+  <div class="hint">グリッド：64×64 / 1マス=10px（コード先頭で変更可）</div>
+</div>
+<canvas id="cv"></canvas>
+
+<script>
+(() => {
+  // ===== 設定 =====
+  const W = 256, H = 256;      // グリッドの横×縦
+  const CELL = 3;           // 1マスの表示サイズ(px)
+  const COOLDOWN_MS = 3000;  // クールダウン（ミリ秒）
+
+  const cv = document.getElementById('cv');
+  const ctx = cv.getContext('2d');
+  const colorEl = document.getElementById('color');
+  const cdEl = document.getElementById('cd');
+  const clearBtn = document.getElementById('clear');
+
+  // ===== 画面解像度対応（高DPIでもにじまない）=====
+  const dpr = Math.max(1, window.devicePixelRatio || 1);
+  cv.width  = W * CELL * dpr;
+  cv.height = H * CELL * dpr;
+  cv.style.width  = (W * CELL) + 'px';
+  cv.style.height = (H * CELL) + 'px';
+  ctx.scale(dpr, dpr);
+
+  // ===== キャンバスの初期化 =====
+  function drawGrid() {
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, W*CELL, H*CELL);
+    ctx.strokeStyle = '#eee';
+    ctx.lineWidth = 1;
+    for (let i = 0; i <= W; i++) {
+      ctx.beginPath(); ctx.moveTo(i*CELL, 0); ctx.lineTo(i*CELL, H*CELL); ctx.stroke();
+    }
+    for (let j = 0; j <= H; j++) {
+      ctx.beginPath(); ctx.moveTo(0, j*CELL); ctx.lineTo(W*CELL, j*CELL); ctx.stroke();
+    }
+  }
+
+  // ===== 状態の保存/読み込み（localStorage）=====
+  const KEY = 'minicanvas:v1';
+  let pixels = loadPixels(); // Map "x,y" -> "#rrggbb"
+
+  function loadPixels() {
+    try {
+      const raw = localStorage.getItem(KEY);
+      if (!raw) return new Map();
+      const obj = JSON.parse(raw);
+      return new Map(Object.entries(obj));
+    } catch {
+      return new Map();
+    }
+  }
+
+  function savePixels() {
+    const obj = Object.fromEntries(pixels.entries());
+    localStorage.setItem(KEY, JSON.stringify(obj));
+  }
+
+  // ===== 描画 =====
+  function paintAll() {
+    drawGrid();
+    for (const [key, col] of pixels.entries()) {
+      const [x, y] = key.split(',').map(Number);
+      fillCell(x, y, col);
+    }
+  }
+
+  function fillCell(x, y, col) {
+    ctx.fillStyle = col;
+    ctx.fillRect(x*CELL, y*CELL, CELL, CELL);
+  }
+
+  // ===== クールダウン =====
+  let nextAt = 0;
+  function updateCooldownUI() {
+    const remain = Math.max(0, nextAt - Date.now());
+    if (remain <= 0) {
+      cdEl.textContent = 'OK';
+    } else {
+      cdEl.textContent = (Math.ceil(remain / 1000)) + 's';
+    }
+  }
+  setInterval(updateCooldownUI, 200);
+
+  // ===== クリックで設置 =====
+  function placeAtClient(x, y, col) {
+    const key = `${x},${y}`;
+    pixels.set(key, col);
+    fillCell(x, y, col);
+    savePixels();
+  }
+
+  function handlePointer(clientX, clientY) {
+    const rect = cv.getBoundingClientRect();
+    const cx = Math.floor((clientX - rect.left) / CELL);
+    const cy = Math.floor((clientY - rect.top) / CELL);
+    if (cx < 0 || cy < 0 || cx >= W || cy >= H) return;
+
+    // クールダウン判定
+    const now = Date.now();
+    if (now < nextAt) return; // まだ
+
+    const col = colorEl.value;
+    placeAtClient(cx, cy, col);
+    nextAt = now + COOLDOWN_MS;
+    updateCooldownUI();
+  }
+
+  cv.addEventListener('click', (e) => handlePointer(e.clientX, e.clientY));
+  // タッチ対応（スマホでもOK）
+  cv.addEventListener('touchstart', (e) => {
+    const t = e.touches[0];
+    handlePointer(t.clientX, t.clientY);
+    e.preventDefault();
+  }, { passive: false });
+
+  // 全消し
+  clearBtn.addEventListener('click', () => {
+    if (!confirm('本当に全消ししますか？')) return;
+    pixels = new Map();
+    savePixels();
+    paintAll();
+  });
+
+  // 初回描画
+  paintAll();
+})();
+</script>
