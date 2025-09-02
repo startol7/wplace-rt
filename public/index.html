@@ -1,136 +1,214 @@
 <!doctype html>
 <meta charset="utf-8" />
-<title>wplace-rt 最小キャンバス</title>
+<title>wplace-rt / Infinite Canvas</title>
 <style>
-  body { font-family: system-ui, sans-serif; margin: 16px; }
-  #wrap { display: flex; gap: 16px; align-items: center; margin-bottom: 8px; flex-wrap: wrap; }
-  canvas { border: 1px solid #ccc; image-rendering: pixelated; cursor: crosshair; }
-  .hint { color: #666; font-size: 12px; }
+  :root { color-scheme: light dark; }
+  html, body { height: 100%; margin: 0; }
+  body { font-family: system-ui, sans-serif; overflow: hidden; }
+  #toolbar {
+    position: fixed; left: 12px; top: 10px; display: flex; gap: 12px; 
+    align-items: center; padding: 8px 10px; border-radius: 10px;
+    background: rgba(255,255,255,.85); backdrop-filter: blur(4px); 
+    box-shadow: 0 6px 18px rgba(0,0,0,.08);
+  }
   #status { font-size: 12px; color:#666; }
+  #cv { display: block; width: 100vw; height: 100vh; }
+  button { cursor: pointer; }
 </style>
 
-<div id="wrap">
-  <div>色 <input type="color" id="color" value="#ff0000"></div>
-  <div>クールダウン: <span id="cd">OK</span></div>
+<div id="toolbar">
+  <span>色 <input type="color" id="color" value="#ff0000"></span>
+  <span>CD: <b id="cd">OK</b></span>
   <span id="status">接続中…</span>
-  <div class="hint">グリッド：256×256 / 1マス=3px（コード先頭で変更可）</div>
+  <span>ズーム: <b id="zoomtxt">1.00x</b></span>
 </div>
 <canvas id="cv"></canvas>
 
 <script>
 (() => {
-  // ===== 設定 =====
-  const W = 256, H = 256;   // グリッド
-  const CELL = 3;           // 1マスの表示サイズ(px)
-  const COOLDOWN_MS = 3000; // クールダウン
-
-  // UI
-  const cv = document.getElementById('cv');
-  const ctx = cv.getContext('2d');
+  // ====== サーバ情報 ======
+  const wsProto = location.protocol === 'https:' ? 'wss' : 'ws';
+  const ws = new WebSocket(`${wsProto}://${location.host}`);
   const colorEl = document.getElementById('color');
   const cdEl = document.getElementById('cd');
   const statusEl = document.getElementById('status');
+  const zoomTxt = document.getElementById('zoomtxt');
 
-  // 高DPI
-  const dpr = Math.max(1, window.devicePixelRatio || 1);
-  cv.width  = W * CELL * dpr;
-  cv.height = H * CELL * dpr;
-  cv.style.width  = (W * CELL) + 'px';
-  cv.style.height = (H * CELL) + 'px';
-  ctx.scale(dpr, dpr);
+  // ====== キャンバス & カメラ ======
+  const cv = document.getElementById('cv');
+  const ctx = cv.getContext('2d', { alpha: false });
+  const DPR = Math.max(1, devicePixelRatio || 1);
 
-  // グリッド描画
+  let WORLD_W = 16384, WORLD_H = 16384;
+  let nextAt = 0, cooldownMs = 1500;
+
+  // 画面いっぱいにフィット
+  function resize() {
+    cv.width  = Math.floor(innerWidth  * DPR);
+    cv.height = Math.floor(innerHeight * DPR);
+    cv.style.width  = innerWidth + 'px';
+    cv.style.height = innerHeight + 'px';
+    ctx.setTransform(DPR,0,0,DPR,0,0);
+    draw();
+  }
+  addEventListener('resize', resize);
+
+  // カメラ（世界→画面変換）
+  let zoom = 1;                      // 倍率（1なら 1セル=BASE_CELL px）
+  const BASE_CELL = 3;               // 基本セルピクセル
+  let camX = (WORLD_W/2)|0, camY = (WORLD_H/2)|0; // 画面中心の世界座標
+
+  function worldToScreen(x, y) {
+    const px = (x - camX) * (BASE_CELL * zoom) + cv.width/(2*DPR);
+    const py = (y - camY) * (BASE_CELL * zoom) + cv.height/(2*DPR);
+    return [px, py];
+  }
+  function screenToWorld(px, py) {
+    const x = (px/DPR - cv.width/(2*DPR)) / (BASE_CELL*zoom) + camX;
+    const y = (py/DPR - cv.height/(2*DPR)) / (BASE_CELL*zoom) + camY;
+    return [Math.floor(x), Math.floor(y)];
+  }
+
+  // ====== ピクセルキャッシュ（疎）======
+  const cache = new Map(); // "x,y" -> color
+  const keyOf = (x,y)=>`${x},${y}`;
+
+  // ====== 可視範囲のタイルを取得 ======
+  let fetchTimer = 0;
+  function requestRegion() {
+    clearTimeout(fetchTimer);
+    fetchTimer = setTimeout(async () => {
+      // 画面に写っている世界座標の範囲
+      const [x0,y0] = screenToWorld(0,0);
+      const [x1,y1] = screenToWorld(cv.width, cv.height);
+      const q = new URLSearchParams({
+        x0: Math.max(0, Math.min(WORLD_W, Math.min(x0,x1))),
+        y0: Math.max(0, Math.min(WORLD_H, Math.min(y0,y1))),
+        x1: Math.max(0, Math.min(WORLD_W, Math.max(x0,x1))),
+        y1: Math.max(0, Math.min(WORLD_H, Math.max(y0,y1))),
+      });
+      const r = await fetch(`/api/region?${q.toString()}`);
+      const d = await r.json();
+      WORLD_W = d.w; WORLD_H = d.h;
+      for (const p of d.pixels) cache.set(keyOf(p.x,p.y), p.color);
+      draw();
+    }, 120); // パン/ズーム後少し待ってからまとめて取得
+  }
+
+  // ====== 描画 ======
   function drawGrid() {
     ctx.fillStyle = '#fff';
-    ctx.fillRect(0, 0, W*CELL, H*CELL);
+    ctx.fillRect(0,0,cv.width/DPR, cv.height/DPR);
     ctx.strokeStyle = '#eee';
-    ctx.lineWidth = 1;
-    for (let i = 0; i <= W; i++) {
-      ctx.beginPath(); ctx.moveTo(i*CELL, 0); ctx.lineTo(i*CELL, H*CELL); ctx.stroke();
+    const step = BASE_CELL * zoom;
+    // 目に見える範囲だけ描く
+    const [x0,y0] = screenToWorld(0,0);
+    const [x1,y1] = screenToWorld(cv.width, cv.height);
+    // 縦線
+    for (let x = Math.floor(x0); x <= Math.ceil(x1); x++) {
+      const [sx] = worldToScreen(x, 0);
+      ctx.beginPath(); ctx.moveTo(sx, 0); ctx.lineTo(sx, cv.height/DPR); ctx.stroke();
     }
-    for (let j = 0; j <= H; j++) {
-      ctx.beginPath(); ctx.moveTo(0, j*CELL); ctx.lineTo(W*CELL, j*CELL); ctx.stroke();
+    // 横線
+    for (let y = Math.floor(y0); y <= Math.ceil(y1); y++) {
+      const [,sy] = worldToScreen(0, y);
+      ctx.beginPath(); ctx.moveTo(0, sy); ctx.lineTo(cv.width/DPR, sy); ctx.stroke();
     }
   }
 
-  function fillCell(x, y, col) {
-    ctx.fillStyle = col;
-    ctx.fillRect(x*CELL, y*CELL, CELL, CELL);
-  }
-
-  drawGrid();
-
-  // ===== WebSocket 接続 =====
-  const proto = (location.protocol === 'https:') ? 'wss' : 'ws';
-  const ws = new WebSocket(`${proto}://${location.host}`);
-
-  let nextAt = 0;
-
-  ws.onopen = () => {
-    statusEl.textContent = '接続済み';
-  };
-
-  ws.onerror = (e) => {
-    console.error('WS error', e);
-    statusEl.textContent = '接続エラー';
-  };
-
-  ws.onclose = () => {
-    statusEl.textContent = '切断（リロードで再接続）';
-  };
-
-  // サーバーからのメッセージ
-  ws.onmessage = (ev) => {
-    const data = JSON.parse(ev.data);
-
-    if (data.type === 'init') {
-      // 既存ピクセル一括反映
-      drawGrid();
-      const pixels = data.pixels || {};
-      for (const key in pixels) {
-        const [x, y] = key.split(',').map(Number);
-        fillCell(x, y, pixels[key]);
-      }
-    } else if (data.type === 'draw') {
-      fillCell(data.x, data.y, data.color);
+  function drawPixels() {
+    const [x0,y0] = screenToWorld(0,0);
+    const [x1,y1] = screenToWorld(cv.width, cv.height);
+    const cell = BASE_CELL * zoom;
+    for (const [k, col] of cache.entries()) {
+      const [x, y] = k.split(',').map(Number);
+      if (x < Math.floor(x0)-1 || x > Math.ceil(x1)+1 || y < Math.floor(y0)-1 || y > Math.ceil(y1)+1) continue;
+      const [sx, sy] = worldToScreen(x, y);
+      ctx.fillStyle = col;
+      ctx.fillRect(sx, sy, cell, cell);
     }
-  };
-
-  // クールダウン UI
-  function updateCooldownUI() {
-    const remain = Math.max(0, nextAt - Date.now());
-    cdEl.textContent = (remain <= 0) ? 'OK' : (Math.ceil(remain / 1000) + 's');
-  }
-  setInterval(updateCooldownUI, 200);
-
-  // クリック（＆タッチ）で設置 → サーバーに送信
-  function handlePointer(clientX, clientY) {
-    const rect = cv.getBoundingClientRect();
-    const cx = Math.floor((clientX - rect.left) / CELL);
-    const cy = Math.floor((clientY - rect.top) / CELL);
-    if (cx < 0 || cy < 0 || cx >= W || cy >= H) return;
-
-    const now = Date.now();
-    if (now < nextAt) return; // クールダウン中
-
-    const col = colorEl.value;
-    // 先にローカル表示（体感を良くする）
-    fillCell(cx, cy, col);
-
-    // サーバーへ送信（全員へブロードキャストされる）
-    if (ws.readyState === WebSocket.OPEN) {
-      ws.send(JSON.stringify({ type: 'draw', x: cx, y: cy, color: col }));
-    }
-
-    nextAt = now + COOLDOWN_MS;
-    updateCooldownUI();
   }
 
-  cv.addEventListener('click', (e) => handlePointer(e.clientX, e.clientY));
-  cv.addEventListener('touchstart', (e) => {
-    const t = e.touches[0];
-    handlePointer(t.clientX, t.clientY);
+  function draw() {
+    drawGrid();
+    drawPixels();
+    zoomTxt.textContent = zoom.toFixed(2) + 'x';
+  }
+
+  // ====== 入力（ドラッグでパン、ホイールでズーム）======
+  let dragging = false, lastX=0, lastY=0;
+  cv.addEventListener('mousedown', (e)=>{ dragging=true; lastX=e.clientX; lastY=e.clientY; });
+  addEventListener('mouseup', ()=> dragging=false);
+  addEventListener('mousemove', (e)=>{
+    if (!dragging) return;
+    const dx = e.clientX - lastX;
+    const dy = e.clientY - lastY;
+    lastX = e.clientX; lastY = e.clientY;
+    camX -= dx / (BASE_CELL*zoom);
+    camY -= dy / (BASE_CELL*zoom);
+    camX = Math.max(0, Math.min(WORLD_W, camX));
+    camY = Math.max(0, Math.min(WORLD_H, camY));
+    draw();
+    requestRegion();
+  }, { passive:true });
+
+  cv.addEventListener('wheel', (e)=>{
     e.preventDefault();
-  }, { passive: false });
+    const before = zoom;
+    const factor = Math.exp(-e.deltaY * 0.001);  // スムーズ
+    zoom = Math.max(0.5, Math.min(8, zoom * factor)); // 0.5x〜8x
+    // マウス位置を軸にズーム
+    const [wx, wy] = screenToWorld(e.clientX, e.clientY);
+    const [sx0, sy0] = worldToScreen(wx, wy);
+    draw();
+    const [sx1, sy1] = worldToScreen(wx, wy);
+    camX += (sx1 - sx0) / (BASE_CELL*zoom);
+    camY += (sy1 - sy0) / (BASE_CELL*zoom);
+    draw();
+    requestRegion();
+  }, { passive:false });
+
+  // ====== クリックで配置 ======
+  cv.addEventListener('click', async (e)=>{
+    const now = Date.now(); if (now < nextAt) return;
+    const [x, y] = screenToWorld(e.clientX, e.clientY);
+    if (x<0||y<0||x>=WORLD_W||y>=WORLD_H) return;
+    const color = colorEl.value;
+    // 楽観描画
+    cache.set(`${x},${y}`, color); draw();
+
+    // 送信
+    const r = await fetch('/api/place', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ x, y, color })
+    });
+    const d = await r.json();
+    if (!r.ok) {
+      if (d.reason === 'cooldown') nextAt = d.nextAt;
+      else alert(d.reason || 'error');
+      return;
+    }
+    nextAt = d.nextAt;
+  });
+
+  // クールダウンUI
+  setInterval(()=> {
+    const remain = Math.max(0, nextAt - Date.now());
+    cdEl.textContent = (remain <= 0) ? 'OK' : (Math.ceil(remain/1000) + 's');
+  }, 200);
+
+  // ====== WS 受信（他人の描画を反映）======
+  ws.onopen = () => { statusEl.textContent = '接続済み'; };
+  ws.onerror = () => { statusEl.textContent = '接続エラー'; };
+  ws.onclose = () => { statusEl.textContent = '切断（リロードで再接続）'; };
+  ws.onmessage = (ev) => {
+    const m = JSON.parse(ev.data);
+    if (m.type === 'hello') { WORLD_W=m.w; WORLD_H=m.h; cooldownMs = m.cooldownMs; }
+    if (m.type === 'draw') { cache.set(`${m.x},${m.y}`, m.color); draw(); }
+  };
+
+  // 初期化
+  resize();
+  requestRegion();
 })();
 </script>
