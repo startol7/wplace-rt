@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>World Place - リアルマップ陣取りゲーム</title>
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+          integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+          crossorigin=""/>
+    
+    <!-- カスタムCSS -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="header">
+        <div class="logo">
+            <span class="pulse">🌍</span>
+            <span>World Place - リアルマップ陣取り</span>
+        </div>
+        <div class="country-selector">
+            <label>あなたの国:</label>
+            <select id="countrySelect">
+                <option value="JP">🇯🇵 日本</option>
+                <option value="US">🇺🇸 アメリカ</option>
+                <option value="CN">🇨🇳 中国</option>
+                <option value="KR">🇰🇷 韓国</option>
+                <option value="GB">🇬🇧 イギリス</option>
+                <option value="FR">🇫🇷 フランス</option>
+                <option value="DE">🇩🇪 ドイツ</option>
+                <option value="BR">🇧🇷 ブラジル</option>
+                <option value="IN">🇮🇳 インド</option>
+                <option value="RU">🇷🇺 ロシア</option>
+                <option value="CA">🇨🇦 カナダ</option>
+                <option value="AU">🇦🇺 オーストラリア</option>
+            </select>
+        </div>
+        <div class="stats">
+            <div class="stat-item">
+                <div class="stat-value" id="totalTerritories">0</div>
+                <div class="stat-label">総領土数</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="onlineUsers">0</div>
+                <div class="stat-label">オンライン</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="myTerritories">0</div>
+                <div class="stat-label">自国領土</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="main-container">
+        <div id="map"></div>
+        
+        <div class="control-buttons">
+            <button class="control-btn" onclick="toggleGrid()" title="グリッド表示">⊞</button>
+            <button class="control-btn" onclick="toggleHeatmap()" title="ヒートマップ">🔥</button>
+            <button class="control-btn" onclick="centerOnMyCountry()" title="自国へ移動">📍</button>
+            <button class="control-btn" onclick="resetView()" title="リセット">🔄</button>
+        </div>
+
+        <div class="sidebar">
+            <div class="panel">
+                <h3>🏆 世界ランキング</h3>
+                <div id="leaderboardList"></div>
+            </div>
+            
+            <div class="panel">
+                <h3>⚔️ 戦闘ログ</h3>
+                <div id="activityList"></div>
+            </div>
+
+            <div class="panel">
+                <h3>📊 統計情報</h3>
+                <div id="statsDetails">
+                    <div class="stat-detail">
+                        <small>最も激戦区:</small>
+                        <div id="hotspot">-</div>
+                    </div>
+                    <div class="stat-detail">
+                        <small>占領率:</small>
+                        <div id="occupancyRate">0%</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="cooldown-overlay" id="cooldownBar">
+        <span>⏳ 次の配置まで:</span>
+        <div class="cooldown-progress">
+            <div class="cooldown-fill" id="cooldownFill"></div>
+        </div>
+        <span id="cooldownTime">5s</span>
+    </div>
+
+    <div class="notification" id="notification"></div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+            integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+            crossorigin=""></script>
+    
+    <!-- カスタムJS -->
+    <script src="script.js"></script>
+</body>
+</html>
