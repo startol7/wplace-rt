@@ -1,99 +1,147 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>TePlace — Real World Map Conquest</title>
 
-  <!-- Leaflet CSS -->
-  <link rel="stylesheet"
-        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
-        crossorigin="anonymous"/>
+  <!-- SEO -->
+  <meta name="description" content="TePlace is a real-time world map conquest game. Paint tiles on OpenStreetMap, compete by country, and climb daily/weekly/monthly rankings." />
+  <link rel="canonical" href="https://teplace.co/" />
+  <meta property="og:title" content="TePlace — Real World Map Conquest" />
+  <meta property="og:description" content="Paint the world together. Real-time map conquest with daily/weekly/monthly rankings." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://teplace.co/" />
+  <meta property="og:site_name" content="TePlace" />
+  <meta name="theme-color" content="#121826" />
 
+  <!-- Leaflet -->
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+    crossorigin=""
+  />
+  <script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+    crossorigin=""
+    defer
+  ></script>
+
+  <!-- App styles -->
   <link rel="stylesheet" href="./style.css" />
 </head>
 <body>
-  <header class="appHeader">
+  <header class="topbar">
     <div class="brand">
-      <span class="logo">🌍</span>
-      <span class="title">TePlace — Real World Map Conquest</span>
+      <span class="globe">🌍</span>
+      <strong>TePlace</strong>
+      <span class="sub">— Real World Map Conquest</span>
     </div>
-    <div class="headerRight">
-      <div class="auth">
-        <img id="avatar" class="avatar" alt="">
-        <button id="signInBtn" class="btn">Sign in</button>
-        <button id="signOutBtn" class="btn outline" style="display:none;">Sign out</button>
-      </div>
+
+    <div class="controls">
+      <label for="countrySelect">Your country:</label>
+      <select id="countrySelect" class="select">
+        <option value="JP">Japan</option>
+        <option value="US">United States</option>
+        <option value="KR">Korea</option>
+        <option value="CN">China</option>
+        <option value="GB">United Kingdom</option>
+        <option value="FR">France</option>
+        <option value="DE">Germany</option>
+        <option value="IN">India</option>
+        <option value="BR">Brazil</option>
+        <option value="CA">Canada</option>
+        <option value="AU">Australia</option>
+      </select>
+
+      <!-- 任意：GoogleサインインUI（なくてもOK。script.js側で匿名ログインします） -->
+      <button id="btnGoogleSignIn" class="btn ghost">Sign in</button>
+      <button id="btnSignOut" class="btn ghost">Sign out</button>
     </div>
   </header>
 
   <main class="layout">
-    <section class="mapWrap">
-      <div id="map"></div>
-
-      <!-- Cooldown -->
-      <div id="cooldownBar" class="cooldown">
-        <span>⏳ Next:</span>
-        <div class="bar"><div id="cooldownFill" class="fill"></div></div>
-        <span id="cooldownSec">10s</span>
-      </div>
+    <section class="map-wrap">
+      <div id="map" class="map"></div>
+      <div class="cooldown" id="cooldownText">Next: ready</div>
     </section>
 
-    <aside class="sidebar">
-      <div class="panel">
-        <h3>🏆 World Ranking</h3>
-        <ol id="rankingList" class="ranking"></ol>
-      </div>
-
-      <div class="panel">
-        <h3>📈 Statistics</h3>
-        <div class="statRow"><span>Total territories</span><b id="totalTiles">0</b></div>
-        <div class="statRow"><span>My territories</span><b id="myTiles">0</b></div>
-        <div class="statRow"><span>Online (approx)</span><b id="onlineUsers">0</b></div>
-      </div>
-
-      <div class="panel">
-        <h3>🎨 Brush & Color</h3>
-
-        <div class="brushRow">
-          <label class="muted">Brush</label>
-          <div id="brushGroup" class="btnGroup">
-            <button class="btn small" data-brush="1">1×1</button>
-            <button class="btn small" data-brush="2">2×2</button>
-            <button class="btn small" data-brush="3">3×3</button>
+    <aside class="side">
+      <!-- Ranking -->
+      <section class="panel">
+        <div class="panel-head">
+          <h3>🏆 World Ranking</h3>
+          <div class="scope">
+            <button id="scopeDaily"   class="chip chip--active">Today</button>
+            <button id="scopeWeekly"  class="chip">Week</button>
+            <button id="scopeMonthly" class="chip">Month</button>
           </div>
         </div>
+        <ul id="rankingList" class="list"></ul>
+      </section>
 
-        <div class="colorRow">
-          <label class="muted">Color</label>
-          <input id="colorPicker" type="color" value="#ff4b4b"/>
-          <input id="colorHex" type="text" value="#ff4b4b" class="hexInput"/>
+      <!-- Stats -->
+      <section class="panel">
+        <h3>📊 Statistics</h3>
+        <div class="kv">
+          <span>Total territories</span>
+          <strong id="totalTerritories">0</strong>
+        </div>
+        <div class="kv">
+          <span>My territories</span>
+          <strong id="myTerritories">0</strong>
+        </div>
+        <div class="kv">
+          <span>Online (approx)</span>
+          <strong id="onlineApprox">0</strong>
+        </div>
+      </section>
+
+      <!-- Brush & Color -->
+      <section class="panel">
+        <h3>🖌️ Brush & Color</h3>
+        <div class="btn-row">
+          <button id="btnBrush1" class="btn">1×1</button>
+          <button id="btnBrush2" class="btn">2×2</button>
+          <button id="btnBrush3" class="btn">3×3</button>
         </div>
 
-        <p class="hint">
-          • 1×1 = 10s / 2×2 = 40s / 3×3 = 90s cooldown<br/>
-          • Click to claim tiles
-        </p>
-      </div>
+        <div class="color-row">
+          <label>Color</label>
+          <input id="colorHex" type="text" value="#ff4b4b" class="input" />
+          <input id="colorPicker" type="color" value="#ff4b4b" class="color" />
+        </div>
 
-      <div class="panel">
+        <p class="muted">
+          1×1 = 10s • 2×2 = 40s • 3×3 = 90s cooldown<br />
+          Click the map to claim tiles
+        </p>
+      </section>
+
+      <!-- Battle Log（今は表示だけ用：必要な人は使ってね） -->
+      <section class="panel">
         <h3>⚔️ Battle Log</h3>
-        <div id="activityList" class="activity"></div>
-      </div>
+        <div class="muted">Coming soon…</div>
+      </section>
     </aside>
   </main>
 
-  <!-- Leaflet JS -->
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-          integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
-          crossorigin="anonymous"></script>
+  <footer class="footer">
+    <small>
+      © <span id="year"></span> TePlace — Built on OpenStreetMap · Leaflet · Firebase
+    </small>
+  </footer>
 
-  <!-- Firebase (v9 compat) -->
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-
-  <script src="./script.js"></script>
+  <!-- App script -->
+  <script>
+    // フッター年号
+    document.addEventListener('DOMContentLoaded', () => {
+      const el = document.querySelector('#year');
+      if (el) el.textContent = new Date().getFullYear();
+    });
+  </script>
+  <script type="module" src="./script.js"></script>
 </body>
 </html>
