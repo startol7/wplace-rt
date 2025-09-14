@@ -5,33 +5,24 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <title>TePlace — Real World Map Conquest</title>
   <link rel="stylesheet" href="style.css" />
-  <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 </head>
 <body>
   <header class="topbar">
-    <div class="brand">🌍 TePlace</div>
-
-    <!-- 横並びコントロール（モバイルで折り返さない） -->
-    <div class="controls controls-inline">
+    <div class="brand">🌍 TePlace — Real World Map Conquest</div>
+    <div class="controls">
       <label class="country-label">
         <span>Your country:</span>
         <select id="countrySelect"></select>
       </label>
-      <div class="auth-row">
-        <button id="signInBtn" class="btn">Sign in</button>
-        <button id="signOutBtn" class="btn hidden">Sign out</button>
-      </div>
+      <button id="signInBtn" class="btn">Sign in</button>
+      <button id="signOutBtn" class="btn hidden">Sign out</button>
     </div>
   </header>
 
   <main class="main">
     <section class="map-wrap">
       <div id="map"></div>
-      <div id="cooldown" class="cooldown hidden">
-        <div id="cooldownFill" class="cooldown-fill"></div>
-      </div>
-      <div class="cooldown-text">Next: <span id="cooldownText">0s</span></div>
     </section>
 
     <aside class="side">
@@ -53,7 +44,7 @@
       </section>
 
       <section class="card">
-        <div class="card-title">🎨 Color</div>
+        <div class="card-title">🖌️ Color</div>
         <label class="color-row">
           <span>Color</span>
           <input id="colorHex" class="color-hex" value="#ff4b4b" maxlength="7" />
@@ -70,14 +61,20 @@
           <input id="tileCustom" type="number" step="0.0001" />
           <button id="tileApply" class="btn">Apply</button>
         </div>
-        <p class="note">1×1 only ・ Cooldown: 10s</p>
+      </section>
+
+      <section class="card">
+        <div class="card-title">⏳ Cooldown</div>
+        <div id="cooldown" class="cooldown hidden">
+          <div id="cooldownFill" class="cooldown-fill"></div>
+        </div>
+        <div class="cooldown-text">Next: <span id="cooldownText">0s</span></div>
+        <p class="note">Cooldown: 10s per tile</p>
       </section>
     </aside>
   </main>
 
-  <!-- Leaflet JS -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <!-- App -->
   <script src="script.js" type="module"></script>
 </body>
 </html>
