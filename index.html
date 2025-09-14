@@ -1,147 +1,80 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>TePlace — Real World Map Conquest</title>
-
-  <!-- SEO -->
-  <meta name="description" content="TePlace is a real-time world map conquest game. Paint tiles on OpenStreetMap, compete by country, and climb daily/weekly/monthly rankings." />
-  <link rel="canonical" href="https://teplace.co/" />
-  <meta property="og:title" content="TePlace — Real World Map Conquest" />
-  <meta property="og:description" content="Paint the world together. Real-time map conquest with daily/weekly/monthly rankings." />
-  <meta property="og:type" content="website" />
-  <meta property="og:url" content="https://teplace.co/" />
-  <meta property="og:site_name" content="TePlace" />
-  <meta name="theme-color" content="#121826" />
-
-  <!-- Leaflet -->
-  <link
-    rel="stylesheet"
-    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
-    crossorigin=""
-  />
-  <script
-    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
-    crossorigin=""
-    defer
-  ></script>
-
-  <!-- App styles -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link rel="stylesheet" href="./style.css" />
 </head>
 <body>
-  <header class="topbar">
-    <div class="brand">
-      <span class="globe">🌍</span>
-      <strong>TePlace</strong>
-      <span class="sub">— Real World Map Conquest</span>
-    </div>
+  <header class="appbar">
+    <div class="brand">🌍 TePlace</div>
 
     <div class="controls">
-      <label for="countrySelect">Your country:</label>
-      <select id="countrySelect" class="select">
-        <option value="JP">Japan</option>
-        <option value="US">United States</option>
-        <option value="KR">Korea</option>
-        <option value="CN">China</option>
-        <option value="GB">United Kingdom</option>
-        <option value="FR">France</option>
-        <option value="DE">Germany</option>
-        <option value="IN">India</option>
-        <option value="BR">Brazil</option>
-        <option value="CA">Canada</option>
-        <option value="AU">Australia</option>
-      </select>
+      <label class="country-label">
+        Your country:
+        <select id="countrySelect"></select>
+      </label>
 
-      <!-- 任意：GoogleサインインUI（なくてもOK。script.js側で匿名ログインします） -->
-      <button id="btnGoogleSignIn" class="btn ghost">Sign in</button>
-      <button id="btnSignOut" class="btn ghost">Sign out</button>
+      <button id="signInBtn" class="ghost">Sign in</button>
+      <button id="signOutBtn" class="ghost hidden">Sign out</button>
     </div>
   </header>
 
-  <main class="layout">
+  <main class="main">
     <section class="map-wrap">
-      <div id="map" class="map"></div>
-      <div class="cooldown" id="cooldownText">Next: ready</div>
+      <div id="map"></div>
+      <div id="cooldown" class="cooldown hidden">
+        <span>Next:</span>
+        <div class="bar"><div class="fill" id="cooldownFill"></div></div>
+        <span id="cooldownText">0s</span>
+      </div>
     </section>
 
     <aside class="side">
-      <!-- Ranking -->
-      <section class="panel">
-        <div class="panel-head">
-          <h3>🏆 World Ranking</h3>
-          <div class="scope">
-            <button id="scopeDaily"   class="chip chip--active">Today</button>
-            <button id="scopeWeekly"  class="chip">Week</button>
-            <button id="scopeMonthly" class="chip">Month</button>
-          </div>
+      <div class="panel">
+        <div class="panel-title">🏆 World Ranking</div>
+        <div class="seg">
+          <button class="seg-btn active" data-period="today">Today</button>
+          <button class="seg-btn" data-period="week">Week</button>
+          <button class="seg-btn" data-period="month">Month</button>
         </div>
         <ul id="rankingList" class="list"></ul>
-      </section>
+      </div>
 
-      <!-- Stats -->
-      <section class="panel">
-        <h3>📊 Statistics</h3>
-        <div class="kv">
-          <span>Total territories</span>
-          <strong id="totalTerritories">0</strong>
-        </div>
-        <div class="kv">
-          <span>My territories</span>
-          <strong id="myTerritories">0</strong>
-        </div>
-        <div class="kv">
-          <span>Online (approx)</span>
-          <strong id="onlineApprox">0</strong>
-        </div>
-      </section>
+      <div class="panel">
+        <div class="panel-title">📊 Statistics</div>
+        <div class="kv"><span>Total territories</span><strong id="statTotal">0</strong></div>
+        <div class="kv"><span>My territories</span><strong id="statMine">0</strong></div>
+        <div class="kv"><span>Online (approx)</span><strong id="statOnline">0</strong></div>
+      </div>
 
-      <!-- Brush & Color -->
-      <section class="panel">
-        <h3>🖌️ Brush & Color</h3>
-        <div class="btn-row">
-          <button id="btnBrush1" class="btn">1×1</button>
-          <button id="btnBrush2" class="btn">2×2</button>
-          <button id="btnBrush3" class="btn">3×3</button>
+      <div class="panel">
+        <div class="panel-title">🖌️ Brush & Color</div>
+        <div class="seg">
+          <button class="seg-btn active" data-brush="1">1×1</button>
+          <button class="seg-btn" data-brush="2">2×2</button>
+          <button class="seg-btn" data-brush="3">3×3</button>
         </div>
-
-        <div class="color-row">
+        <div class="row">
           <label>Color</label>
-          <input id="colorHex" type="text" value="#ff4b4b" class="input" />
-          <input id="colorPicker" type="color" value="#ff4b4b" class="color" />
+          <input type="color" id="colorPicker" value="#ff4b4b" />
+          <input type="text" id="colorHex" value="#ff4b4b" />
         </div>
-
-        <p class="muted">
-          1×1 = 10s • 2×2 = 40s • 3×3 = 90s cooldown<br />
-          Click the map to claim tiles
-        </p>
-      </section>
-
-      <!-- Battle Log（今は表示だけ用：必要な人は使ってね） -->
-      <section class="panel">
-        <h3>⚔️ Battle Log</h3>
-        <div class="muted">Coming soon…</div>
-      </section>
+        <small>1×1=10s / 2×2=40s / 3×3=90s cooldown</small>
+      </div>
     </aside>
   </main>
 
   <footer class="footer">
-    <small>
-      © <span id="year"></span> TePlace — Built on OpenStreetMap · Leaflet · Firebase
-    </small>
+    <small>© OpenStreetMap contributors • Built for demo</small>
   </footer>
 
-  <!-- App script -->
-  <script>
-    // フッター年号
-    document.addEventListener('DOMContentLoaded', () => {
-      const el = document.querySelector('#year');
-      if (el) el.textContent = new Date().getFullYear();
-    });
-  </script>
+  <!-- Leaflet -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <!-- Firebase (modular) -->
   <script type="module" src="./script.js"></script>
 </body>
 </html>
