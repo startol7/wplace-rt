@@ -47,12 +47,11 @@ document.querySelectorAll('.seg-btn[data-tile]').forEach(b=>{
 });
 document.getElementById('tileApply').addEventListener('click', ()=>{
   const v = parseFloat(tileInput.value);
-  if(!isFinite(v) || v<=0){ alert('Invalid tile size'); return; }
+  if(!isFinite(v) || v<=0){ toast('Invalid tile size'); return; }
   setTile(v);
 });
 function setTile(v){
   TILE = v; localStorage.setItem('tile', String(v));
-  // 再描画（購読で引き直すのが綺麗だが、ここでは既存表示は維持）
   console.log('TILE set ->', TILE);
 }
 const snap = v => Math.floor(v/TILE)*TILE;
@@ -112,28 +111,48 @@ function showCooldown(sec){
 const inCd = ()=> Date.now()-lastPaintAt < BRUSH_COOLDOWN[brushSize]*1000;
 
 // ----------------------------
-// 5. Firebase (オプション / 失敗でも描ける)
+// 5. Firebase（遅延初期化。失敗しても描画はOK）
 // ----------------------------
-let auth=null, db=null, user=null;
-let guestMode = true;
-
-const signInBtn = document.getElementById('signInBtn');
+let auth=null, db=null, user=null, firebaseReady=false;
+const signInBtn  = document.getElementById('signInBtn');
 const signOutBtn = document.getElementById('signOutBtn');
 
-(async function initFirebase(){
+// どの状態でもボタンは反応させる
+signInBtn.addEventListener('click', async ()=>{
+  try{
+    if(!firebaseReady) await ensureFirebaseInitialized();
+    const { signInAnonymously } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js');
+    await signInAnonymously(auth);
+  }catch(e){
+    console.warn('Sign-in error (guest can still draw):', e);
+    toast('Could not sign in. You can still draw as guest.');
+  }
+});
+signOutBtn.addEventListener('click', async ()=>{
+  try{
+    if(!firebaseReady) return;
+    const { signOut } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js');
+    await signOut(auth);
+  }catch(e){
+    console.warn('Sign-out error:', e);
+  }
+});
+
+async function ensureFirebaseInitialized(){
+  if(firebaseReady) return true;
   try{
     const [{ initializeApp },
-           { getAuth, onAuthStateChanged, signInAnonymously, signOut },
-           { getFirestore, collection, doc, setDoc, onSnapshot, serverTimestamp, query, orderBy, limit, increment }]
+           { getAuth, onAuthStateChanged, setPersistence, browserLocalPersistence, signInAnonymously },
+           { getFirestore, collection, doc, onSnapshot, query, orderBy, limit }]
       = await Promise.all([
         import('https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js'),
         import('https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js'),
         import('https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js'),
       ]);
 
-    // ==== ここにあなたの Firebase 設定を貼る ====
-    const firebaseConfig = {
-      apiKey: "AIzaSyA2IxeqJxFZzlmuqu0n4W3wXa2VpzZISBE",
+    // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyA2IxeqJxFZzlmuqu0n4W3wXa2VpzZISBE",
   authDomain: "wwplace-b6a86.firebaseapp.com",
   projectId: "wwplace-b6a86",
   storageBucket: "wwplace-b6a86.firebasestorage.app",
@@ -141,25 +160,28 @@ const signOutBtn = document.getElementById('signOutBtn');
   appId: "1:1005360971581:web:3f23bdb25cdac844050f54",
   measurementId: "G-4F90EG7W7N"
 };
-    // ============================================
+    // =============================
 
     const app = initializeApp(firebaseConfig);
     auth = getAuth(app);
     db   = getFirestore(app);
 
-    signInBtn.addEventListener('click', ()=> signInAnonymously(auth));
-    signOutBtn.addEventListener('click', ()=> signOut(auth));
+    // ローカル永続化
+    await setPersistence(auth, browserLocalPersistence);
 
     onAuthStateChanged(auth, (u)=>{
-      user = u;
-      guestMode = !u;
+      user = u || null;
       signInBtn.classList.toggle('hidden', !!u);
       signOutBtn.classList.toggle('hidden', !u);
-      if(!u){ signInAnonymously(auth).catch(()=>{}); }
-      subscribeMine();
+      subscribeMine();      // 自分の枚数
+      subscribeRanking();   // ランキング
+      if(u){ toast('Signed in'); }
     });
 
-    // --- 既存タイル購読（最新5000件） ---
+    // 初回は自動で匿名サインインを試みる（失敗しても描画OK）
+    try{ await signInAnonymously(auth); }catch(_){}
+
+    // 既存タイル購読
     onSnapshot(query(collection(db,'tiles'), orderBy('ts','desc'), limit(5000)), snap=>{
       layerTiles.clearLayers();
       snap.forEach(s=>{
@@ -168,21 +190,20 @@ const signOutBtn = document.getElementById('signOutBtn');
       });
     });
 
-    // --- 全体枚数 ---
-    onSnapshot(doc(db,'stats','global'), s=>{
-      document.getElementById('statTotal').textContent = s.exists()? (s.data().total||0) : 0;
-    });
-
-    subscribeRanking();
-
+    firebaseReady = true;
+    return true;
   }catch(err){
-    console.warn('[Firebase disabled] Map works offline:', err);
+    console.warn('[Firebase init failed] Guest-only mode:', err);
+    firebaseReady = false;
+    return false;
   }
-})();
+}
+// 起動時に一度だけ初期化を試す（失敗してもOK）
+ensureFirebaseInitialized();
 
-// 自分の枚数サブスク（ゲストは 0）
+// 自分の枚数
 function subscribeMine(){
-  if(!db || !user){
+  if(!firebaseReady || !user){
     document.getElementById('statMine').textContent = 0;
     return;
   }
@@ -210,8 +231,8 @@ function getWeekNumber(date){
 }
 
 // スコア加算（ログイン時のみ）
-async function updateScores(db, n){
-  if(!db || !user) return;
+async function updateScores(n){
+  if(!firebaseReady || !user) return;
   const {doc,setDoc,increment} = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js');
   const p = getPeriodKeys();
   await Promise.all([
@@ -226,7 +247,7 @@ async function updateScores(db, n){
 // ランキング購読
 let unsubRanking=null;
 function subscribeRanking(){
-  if(!db) return;
+  if(!firebaseReady) return;
   if(unsubRanking) unsubRanking();
   const period = document.querySelector('.seg-btn.active[data-period]')?.dataset.period || 'today';
   const key = getPeriodKeys()[period];
@@ -257,10 +278,9 @@ setInterval(()=>{
 }, 8000);
 
 // ----------------------------
-// 6. クリックで描画（ゲストでもOK）
+// 6. クリックで描画（ゲストでも常にOK）
 // ----------------------------
 map.on('click', async (e)=>{
-  // クールダウン共通
   if(inCd()){
     const left=Math.ceil((BRUSH_COOLDOWN[brushSize]*1000-(Date.now()-lastPaintAt))/1000);
     showCooldown(left); return;
@@ -270,7 +290,7 @@ map.on('click', async (e)=>{
   const baseLat = snap(e.latlng.lat);
   const baseLng = snap(e.latlng.lng);
 
-  // 1) まずローカル即時描画（サインイン不要）
+  // 1) ローカル即時描画（ログイン不要）
   for(let dy=0; dy<brushSize; dy++){
     for(let dx=0; dx<brushSize; dx++){
       const lat = baseLat + dy*TILE;
@@ -279,8 +299,8 @@ map.on('click', async (e)=>{
     }
   }
 
-  // 2) サインイン済み & Firestore 利用可なら保存＆スコア
-  if(db && user){
+  // 2) Firebase 保存（サインイン済みのときだけ）
+  if(firebaseReady && user){
     try{
       const {doc,setDoc,serverTimestamp} = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js');
       const ops=[];
@@ -295,13 +315,30 @@ map.on('click', async (e)=>{
         }
       }
       await Promise.all(ops);
-      updateScores(db, brushSize*brushSize);
+      await updateScores(brushSize*brushSize);
     }catch(err){
-      console.warn('Save skip:', err);
+      console.warn('Save skipped:', err);
     }
   }
 
-  // 3) クールダウン共通
+  // 3) クールダウン
   lastPaintAt = Date.now();
   showCooldown(BRUSH_COOLDOWN[brushSize]);
 });
+
+// ----------------------------
+// 7. 簡易トースト
+// ----------------------------
+function toast(msg){
+  let el = document.getElementById('___toast');
+  if(!el){
+    el = document.createElement('div');
+    el.id='___toast';
+    el.style.cssText='position:fixed;left:50%;top:18px;transform:translateX(-50%);background:#1f2a44;color:#e7ecf3;padding:8px 12px;border:1px solid #22314f;border-radius:10px;z-index:9999;box-shadow:0 4px 12px #0005;font-size:14px';
+    document.body.append(el);
+  }
+  el.textContent = msg;
+  el.style.opacity='1';
+  clearTimeout(el.__t);
+  el.__t=setTimeout(()=>{ el.style.opacity='0'; }, 2400);
+}
