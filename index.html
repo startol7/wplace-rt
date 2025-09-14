@@ -2,88 +2,92 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <title>TePlace — Real World Map Conquest</title>
+  <link rel="stylesheet" href="style.css" />
+  <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <link rel="stylesheet" href="./style.css" />
 </head>
 <body>
-  <header class="appbar">
-    <div class="brand">🌍 TePlace</div>
+  <header class="topbar">
+    <div class="brand">🌍 TePlace — Real World Map Conquest</div>
     <div class="controls">
       <label class="country-label">
-        Your country:
+        <span>Your country:</span>
         <select id="countrySelect"></select>
       </label>
-      <button id="signInBtn" class="ghost">Sign in</button>
-      <button id="signOutBtn" class="ghost hidden">Sign out</button>
+      <button id="signInBtn" class="btn">Sign in</button>
+      <button id="signOutBtn" class="btn hidden">Sign out</button>
     </div>
   </header>
 
   <main class="main">
     <section class="map-wrap">
       <div id="map"></div>
-      <div id="cooldown" class="cooldown hidden">
-        <span>Next:</span>
-        <div class="bar"><div class="fill" id="cooldownFill"></div></div>
-        <span id="cooldownText">0s</span>
-      </div>
     </section>
 
     <aside class="side">
-      <div class="panel">
-        <div class="panel-title">🏆 World Ranking</div>
+      <section class="card">
+        <div class="card-title">🏆 World Ranking</div>
         <div class="seg">
           <button class="seg-btn active" data-period="today">Today</button>
           <button class="seg-btn" data-period="week">Week</button>
           <button class="seg-btn" data-period="month">Month</button>
         </div>
-        <ul id="rankingList" class="list"></ul>
-      </div>
+        <ul id="rankingList" class="ranking">
+          <li>No data yet</li>
+        </ul>
+      </section>
 
-      <div class="panel">
-        <div class="panel-title">📊 Statistics</div>
-        <div class="kv"><span>Total territories</span><strong id="statTotal">0</strong></div>
-        <div class="kv"><span>My territories</span><strong id="statMine">0</strong></div>
-        <div class="kv"><span>Online (approx)</span><strong id="statOnline">0</strong></div>
-      </div>
+      <section class="card">
+        <div class="card-title">📊 Statistics</div>
+        <div class="stat-row"><span>Total territories</span><strong id="statTotal">0</strong></div>
+        <div class="stat-row"><span>My territories</span><strong id="statMine">0</strong></div>
+        <div class="stat-row"><span>Online (approx)</span><strong id="statOnline">0</strong></div>
+      </section>
 
-      <div class="panel">
-        <div class="panel-title">🖌️ Brush & Color</div>
+      <section class="card">
+        <div class="card-title">🖌️ Brush & Color</div>
         <div class="seg">
           <button class="seg-btn active" data-brush="1">1×1</button>
           <button class="seg-btn" data-brush="2">2×2</button>
           <button class="seg-btn" data-brush="3">3×3</button>
         </div>
-        <div class="row">
-          <label>Color</label>
-          <input type="color" id="colorPicker" value="#ff4b4b" />
-          <input type="text" id="colorHex" value="#ff4b4b" />
-        </div>
-      </div>
+        <label class="color-row">
+          <span>Color</span>
+          <input id="colorHex" class="color-hex" value="#ff4b4b" maxlength="7" />
+          <input id="colorPicker" class="color-picker" type="color" value="#ff4b4b" />
+        </label>
 
-      <div class="panel">
-        <div class="panel-title">🧩 Pixel size</div>
+        <div class="sub-title">Tile size</div>
         <div class="seg">
-          <button class="seg-btn" data-tile="0.001">Large</button>
-          <button class="seg-btn active" data-tile="0.0005">Medium</button>
-          <button class="seg-btn" data-tile="0.0002">Small</button>
+          <button class="seg-btn" data-tile="0.005">0.005°</button>
+          <button class="seg-btn" data-tile="0.001">0.001°</button>
+          <button class="seg-btn active" data-tile="0.0005">0.0005°</button>
         </div>
-        <div class="row">
-          <label>Custom</label>
-          <input id="tileCustom" type="number" min="0.00001" step="0.00001" value="0.0005">
-          <button id="tileApply" class="ghost">Apply</button>
+        <div class="tile-custom">
+          <input id="tileCustom" type="number" step="0.0001" />
+          <button id="tileApply" class="btn">Apply</button>
         </div>
-        <small>Tip: 0.0005 ≒ 55m、0.0002 ≒ 22m。小さくするほど重くなります。</small>
-      </div>
+      </section>
+
+      <section class="card">
+        <div class="card-title">⏳ Cooldown</div>
+        <div id="cooldown" class="cooldown hidden">
+          <div id="cooldownFill" class="cooldown-fill"></div>
+        </div>
+        <div class="cooldown-text">Next: <span id="cooldownText">0s</span></div>
+        <p class="note">
+          1×1 = 10s ・ 2×2 = 40s ・ 3×3 = 90s cooldown<br>
+          Click the map to claim tiles.
+        </p>
+      </section>
     </aside>
   </main>
 
-  <footer class="footer">
-    <small>© OpenStreetMap contributors • Built for demo</small>
-  </footer>
-
+  <!-- Leaflet JS -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script type="module" src="./script.js"></script>
+  <!-- App -->
+  <script src="script.js" type="module"></script>
 </body>
 </html>
