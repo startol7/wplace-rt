@@ -1,0 +1,35 @@
+const GRID_SIZE = 0.0001;
+const COOLDOWN_TIME = 10000;  // 10秒
+const INITIAL_TERRITORIES = 50;
+const GRID_MIN_ZOOM = 17;
+const GRID_MAX_CELLS = 800;
+
+// …（中略：国データ・ブラシなど前回と同じ）
+
+function startCooldown(){
+  canPlace=false;
+  const bar=document.getElementById('cooldownBar'),
+        fill=document.getElementById('cooldownFill'),
+        time=document.getElementById('cooldownTime');
+  bar.classList.add('active');
+  let left=COOLDOWN_TIME;
+  const id=setInterval(()=>{
+    left-=100;
+    const p=(COOLDOWN_TIME-left)/COOLDOWN_TIME*100;
+    fill.style.width=p+'%';
+    time.textContent=Math.max(0,Math.ceil(left/1000))+'s';
+    if(left<=0){
+      clearInterval(id);
+      bar.classList.remove('active');
+      canPlace=true;
+      time.textContent=(COOLDOWN_TIME/1000)+'s'; // reset表示
+    }
+  },100);
+}
+
+// DOMContentLoaded 内に初期表示同期を追加
+document.addEventListener('DOMContentLoaded', ()=>{
+  // …既存初期化処理
+  const ct=document.getElementById('cooldownTime');
+  if(ct) ct.textContent=(COOLDOWN_TIME/1000)+'s';
+});
