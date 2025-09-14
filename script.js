@@ -1,314 +1,285 @@
-/* ===== Config ===== */
-const GRID_SIZE = 0.0001;
-const COOLDOWN_TIME = 10000;
-const INITIAL_TERRITORIES = 50;
+/**********************************************
+ * TePlace — Real World Map Conquest
+ * Brush 1x1 / 2x2 / 3x3 with variable cooldown
+ * Firebase Auth + Firestore (territories/users)
+ **********************************************/
 
-/* ===== State ===== */
-let map, canPlace = true;
-let showGrid = false, showHeatmap = false;
-let territoryMarkers, gridLayer, heatmapLayer;
-let territories = new Map();          // key -> { owner, color }
-let currentCountry = 'JP';
-let currentPeriod = 'today';          // 'today' | 'week' | 'month' | 'all'
-
-/* ===== Countries (sample) ===== */
-const countryData = {
-  JP:{name:'Japan', flag:'🇯🇵', center:[35.6762,139.6503]},
-  US:{name:'USA', flag:'🇺🇸', center:[39.8283,-98.5795]},
-  GB:{name:'UK', flag:'🇬🇧', center:[54,-2]},
-  FR:{name:'France', flag:'🇫🇷', center:[46.22,2.21]},
-  DE:{name:'Germany', flag:'🇩🇪', center:[51.16,10.45]},
-  CN:{name:'China', flag:'🇨🇳', center:[35.8617,104.1954]},
-  KR:{name:'Korea', flag:'🇰🇷', center:[36.5,127.8]},
-  IN:{name:'India', flag:'🇮🇳', center:[20.59,78.96]},
-  BR:{name:'Brazil', flag:'🇧🇷', center:[-14.235,-51.9253]},
-  AU:{name:'Australia', flag:'🇦🇺', center:[-25.27,133.77]},
-  CA:{name:'Canada', flag:'🇨🇦', center:[56.1304,-106.3468]}
+/* ====== Firebase ====== */
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT.firebaseapp.com",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_PROJECT.appspot.com",
+  messagingSenderId: "YOUR_SENDER_ID",
+  appId: "YOUR_APP_ID"
 };
 
-/* ===== Brush (fix: always read current color at click time) ===== */
-const brush = {
-  mode: 'solid',                                         // 'solid' | 'palette' | 'rainbow'
-  getSolid: () => document.getElementById('solidColor')?.value || '#ff4b4b',
-  palette: ['#ff4b4b','#ffd166','#06d6a0','#118ab2','#8338ec'],
-  paletteIndex: 0
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db   = firebase.firestore();
+
+/* ====== Leaflet / Game State ====== */
+let map;
+let me = null;                 // auth user
+let myTiles = 0;
+let canPlace = true;
+
+const GRID_SIZE = 0.01;        // 1 tile ≒ 約1km四方(縮尺依存)
+const COOLDOWN_BASE_MS = 10000;// 1タイル=10s / 4=40s / 9=90s
+let BRUSH_SIZE = 1;
+
+const territoryLayer = L.layerGroup();
+
+// UI refs
+const avatar      = document.getElementById("avatar");
+const signInBtn   = document.getElementById("signInBtn");
+const signOutBtn  = document.getElementById("signOutBtn");
+const rankingList = document.getElementById("rankingList");
+const activityList= document.getElementById("activityList");
+const totalTilesEl= document.getElementById("totalTiles");
+const myTilesEl   = document.getElementById("myTiles");
+const onlineEl    = document.getElementById("onlineUsers");
+const brushGroup  = document.getElementById("brushGroup");
+const colorPicker = document.getElementById("colorPicker");
+const colorHex    = document.getElementById("colorHex");
+const cooldownEl  = document.getElementById("cooldownBar");
+const cooldownFill= document.getElementById("cooldownFill");
+const cooldownSec = document.getElementById("cooldownSec");
+let cooldownTimer = null;
+
+let currentColor = colorPicker.value;
+
+/* ====== Helpers ====== */
+const toast = (msg) => {
+  const el = document.createElement('div');
+  el.textContent = msg;
+  el.style.cssText = 'position:fixed;left:50%;transform:translateX(-50%);bottom:80px;background:#162131;border:1px solid #263043;border-radius:12px;padding:10px 14px;z-index:9999';
+  document.body.appendChild(el);
+  setTimeout(()=> el.remove(), 2200);
 };
-const setActive = id => {
-  ['modeSolid','modePalette','modeRainbow'].forEach(x=>{
-    const el=document.getElementById(x); if(!el) return;
-    if(x===id) el.classList.add('active'); else el.classList.remove('active');
-  });
-};
-const nextFromPalette = () => {
-  const c = brush.palette[brush.paletteIndex % brush.palette.length];
-  brush.paletteIndex = (brush.paletteIndex + 1) % brush.palette.length;
-  return c;
-};
-const hueFromPosition = (lat,lng) => {
-  const h = ((lat*137.5)+(lng*97.3))%360;
-  return `hsl(${(h+360)%360},80%,55%)`;
-};
-const pickBrushColor = (lat,lng) => {                    // ★クリック時に“今の色”を確定
-  if (brush.mode === 'solid') return brush.getSolid();   // DOMから直読みで取りこぼし防止
-  if (brush.mode === 'palette') return nextFromPalette();
-  return hueFromPosition(lat,lng);
-};
 
-/* ===== Utils ===== */
-const getGridCoord = (lat,lng)=>({lat:Math.floor(lat/GRID_SIZE)*GRID_SIZE,lng:Math.floor(lng/GRID_SIZE)*GRID_SIZE});
-const getCoordKey = (lat,lng)=>{ const g=getGridCoord(lat,lng); return `${g.lat.toFixed(4)},${g.lng.toFixed(4)}`; };
-const autoCountryColor = code => {
-  const h = ([...code].reduce((a,c)=>a+c.charCodeAt(0),0)*137.5)%360;
-  return `hsl(${h},70%,55%)`;
-};
-const notify = (msg,type='info')=>{
-  const el=document.getElementById('notification'); if(!el) return;
-  const colors={success:'linear-gradient(135deg,rgba(74,222,128,.9),rgba(34,197,94,.9))',
-                error:'linear-gradient(135deg,rgba(239,68,68,.9),rgba(185,28,28,.9))',
-                warning:'linear-gradient(135deg,rgba(251,191,36,.9),rgba(217,119,6,.9))',
-                info:'linear-gradient(135deg,rgba(59,130,246,.9),rgba(29,78,216,.9))'};
-  el.style.background = colors[type]||colors.info; el.textContent=msg; el.className='notification show';
-  setTimeout(()=> el.classList.remove('show'), 2000);
-};
-
-/* ===== Rankings (persistent with period rollovers) ===== */
-const STORAGE_KEY = 'teplace_leaderboards_v1';
-
-function isoWeekId(d=new Date()){
-  const date=new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
-  const day = (date.getUTCDay()+6)%7;
-  date.setUTCDate(date.getUTCDate()-day+3);
-  const firstThursday = new Date(Date.UTC(date.getUTCFullYear(),0,4));
-  const week = 1 + Math.round(((date-firstThursday)/86400000 - 3 + ((firstThursday.getUTCDay()+6)%7))/7);
-  return `${date.getUTCFullYear()}-W${String(week).padStart(2,'0')}`;
-}
-function dayId(d=new Date()){ return d.toISOString().slice(0,10); }          // YYYY-MM-DD (UTC)
-function monthId(d=new Date()){ return `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}`; }
-
-function loadBoards(){
-  let obj;
-  try{ obj = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; }catch{ obj = {}; }
-  const now=new Date();
-  const ids={day:dayId(now), week:isoWeekId(now), month:monthId(now)};
-  const def = { last: ids, boards:{ today:{}, week:{}, month:{}, all:{} } };
-
-  obj = Object.assign(def, obj);               // fill missing
-  // rollover
-  if(obj.last.day !== ids.day) obj.boards.today = {};
-  if(obj.last.week !== ids.week) obj.boards.week = {};
-  if(obj.last.month !== ids.month) obj.boards.month = {};
-  obj.last = ids;
-  return obj;
-}
-function saveBoards(obj){
-  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(obj)); }catch{}
-}
-let LB = loadBoards();
-
-function recordPlacement(countryCode){          // human placements only
-  const b=LB.boards;
-  b.today[countryCode]=(b.today[countryCode]||0)+1;
-  b.week[countryCode]=(b.week[countryCode]||0)+1;
-  b.month[countryCode]=(b.month[countryCode]||0)+1;
-  b.all[countryCode]=(b.all[countryCode]||0)+1;
-  saveBoards(LB);
+// Grid → key
+function keyOf(lat,lng){
+  const la = Math.floor(lat/GRID_SIZE)*GRID_SIZE;
+  const ln = Math.floor(lng/GRID_SIZE)*GRID_SIZE;
+  return `${la.toFixed(5)},${ln.toFixed(5)}`;
 }
 
-function setActiveTab(period){
-  currentPeriod = period;
-  document.querySelectorAll('.tab').forEach(btn=>{
-    btn.classList.toggle('active', btn.dataset.period===period);
-  });
-  renderLeaderboard();
-}
-function renderLeaderboard(){
-  const data = LB.boards[currentPeriod] || {};
-  const top = Object.entries(data).sort((a,b)=>b[1]-a[1]).slice(0,10);
-  const box = document.getElementById('leaderboardList');
-  if(!top.length){ box.innerHTML = `<div class="muted" style="padding:8px 12px;">No data yet in ${currentPeriod.toUpperCase()}.</div>`; return; }
-  box.innerHTML = top.map(([code,count],i)=>{
-    const d=countryData[code]||{name:code,flag:''};
-    return `<div class="leaderboard-item"><span class="rank">${i+1}</span>
-      <span class="country-info"><span>${d.flag}</span><span>${d.name}</span></span>
-      <span class="territory-count">${count}</span></div>`;
-  }).join('');
-}
+// Brush keys (centered)
+function getBrushKeys(lat,lng,size){
+  const centerLa = Math.floor(lat/GRID_SIZE)*GRID_SIZE;
+  const centerLn = Math.floor(lng/GRID_SIZE)*GRID_SIZE;
+  const half = (size-1)/2; // 1→0, 2→0.5, 3→1
+  const startLa = centerLa - half*GRID_SIZE;
+  const startLn = centerLn - half*GRID_SIZE;
 
-/* ===== Map (tile fallback) ===== */
-function initMap(){
-  const isSmall = matchMedia('(max-width:980px)').matches;
-  const center  = countryData[currentCountry]?.center || [35.6762,139.6503];
-
-  try{
-    map = L.map('map',{center,zoom:isSmall?4:5,minZoom:2,maxZoom:19,worldCopyJump:true});
-
-    const candidates = [
-      { url:'https://cartodb-basemaps-a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
-        attr:'&copy; OSM &copy; CARTO' },
-      { url:'https://cartodb-basemaps-a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
-        attr:'&copy; OSM &copy; CARTO' },
-      { url:'https://stamen-tiles.a.ssl.fastly.net/toner-lite/{z}/{x}/{y}.png',
-        attr:'Tiles by Stamen, Data &copy; OSM' }
-    ];
-
-    let layer, idx=0;
-    const use = i=>{
-      if(layer){ try{ map.removeLayer(layer);}catch{} }
-      const c=candidates[i];
-      layer=L.tileLayer(c.url,{maxZoom:19,attribution:c.attr,crossOrigin:true});
-      layer.on('tileerror',()=>{ idx++; if(idx<candidates.length){ notify('Tile error. Switching…','warning'); use(idx);} else { notify('All tile servers failed','error'); }});
-      layer.addTo(map);
-    };
-    use(0);
-
-    territoryMarkers=L.layerGroup().addTo(map);
-    gridLayer=L.layerGroup(); heatmapLayer=L.layerGroup();
-
-    map.on('click',e=>{ if(canPlace) placeTerritory(e.latlng.lat,e.latlng.lng); });
-    map.on('moveend',()=>{ if(showGrid) updateGrid(); });
-
-    setTimeout(()=> map.invalidateSize(),0);
-    return true;
-  }catch(err){ console.error(err); notify('Map init failed','error'); return false; }
-}
-
-/* ===== Painting ===== */
-function createRect(lat,lng,val){
-  const g=getGridCoord(lat,lng), col=val.color || autoCountryColor(val.owner);
-  return L.rectangle([[g.lat,g.lng],[g.lat+GRID_SIZE,g.lng+GRID_SIZE]],{color:col,fillColor:col,fillOpacity:.48,weight:1})
-    .on('click',e=>{ L.DomEvent.stopPropagation(e); if(canPlace) placeTerritory(g.lat+GRID_SIZE/2,g.lng+GRID_SIZE/2); })
-    .on('mouseover',function(){ this.setStyle({fillOpacity:.65}); })
-    .on('mouseout',function(){ this.setStyle({fillOpacity:.48}); });
-}
-function redraw(){ territoryMarkers.clearLayers(); territories.forEach((v,k)=>{ const [la,ln]=k.split(',').map(Number); createRect(la,ln,v).addTo(territoryMarkers); }); }
-
-function placeTerritory(lat,lng){
-  if(!canPlace) return;
-  const key=getCoordKey(lat,lng);
-  const chosenColor = pickBrushColor(lat,lng);   // ★クリック時点の色
-  territories.set(key,{owner:currentCountry,color:chosenColor});
-  redraw();
-
-  // record to persistent leaderboards (human placements only)
-  recordPlacement(currentCountry);
-  renderLeaderboard();
-
-  startCooldown(); updateStats(); addActivity(currentCountry,key); 
-}
-
-/* ===== Stats ===== */
-function startCooldown(){
-  canPlace=false;
-  const bar=document.getElementById('cooldownBar'),fill=document.getElementById('cooldownFill'),tt=document.getElementById('cooldownTime');
-  bar.classList.add('active'); let left=COOLDOWN_TIME;
-  const id=setInterval(()=>{ left-=100; fill.style.width=((COOLDOWN_TIME-left)/COOLDOWN_TIME*100)+'%'; tt.textContent=Math.max(0,Math.ceil(left/1000))+'s';
-    if(left<=0){ clearInterval(id); bar.classList.remove('active'); canPlace=true; tt.textContent=(COOLDOWN_TIME/1000)+'s'; }
-  },100);
-}
-function updateStats(){
-  const total=territories.size;
-  const mine=[...territories.values()].filter(v=>v.owner===currentCountry).length;
-  const max=200000;
-  document.getElementById('totalTerritories').textContent=total;
-  document.getElementById('myTerritories').textContent=mine;
-  document.getElementById('onlineUsers').textContent=Math.floor(Math.random()*500)+200; // demo
-  document.getElementById('occupancyRate').textContent=Math.round(total/max*100)+'%';
-}
-function addActivity(country,key){
-  const box=document.getElementById('activityList'); const d=countryData[country]||{name:country,flag:''};
-  const el=document.createElement('div'); el.className='activity-item'; el.style.borderLeftColor=autoCountryColor(country);
-  el.innerHTML=`<div style="font-weight:700">${d.flag} ${d.name} captured a tile</div>
-    <div style="opacity:.6;font-size:12px">📍 ${key} | ${new Date().toLocaleTimeString()}</div>`;
-  box.prepend(el); while(box.children.length>8) box.removeChild(box.lastChild);
-}
-
-/* ===== Grid / Heatmap ===== */
-function toggleGrid(){ showGrid=!showGrid; if(showGrid){ updateGrid(); gridLayer.addTo(map);} else gridLayer.remove(); }
-function updateGrid(){
-  gridLayer.clearLayers();
-  const b=map.getBounds(), step=GRID_SIZE*Math.pow(2,Math.max(0,12-map.getZoom()));
-  for(let la=Math.floor(b.getSouth()/step)*step; la<=Math.ceil(b.getNorth()/step)*step; la+=step){
-    for(let ln=Math.floor(b.getWest()/step)*step; ln<=Math.ceil(b.getEast()/step)*step; ln+=step){
-      L.rectangle([[la,ln],[la+step,ln+step]],{color:'rgba(255,255,255,.2)',weight:1,fill:false,interactive:false}).addTo(gridLayer);
+  const keys = [];
+  for(let r=0;r<size;r++){
+    for(let c=0;c<size;c++){
+      keys.push(keyOf(startLa + r*GRID_SIZE, startLn + c*GRID_SIZE));
     }
   }
-}
-function toggleHeatmap(){ showHeatmap=!showHeatmap; notify(showHeatmap?'Heatmap ON':'Heatmap OFF','info'); if(showHeatmap){ updateHeatmap(); heatmapLayer.addTo(map);} else heatmapLayer.remove(); }
-function updateHeatmap(){
-  heatmapLayer.clearLayers();
-  const density=new Map();
-  territories.forEach((v,k)=>{ const [la,ln]=k.split(',').map(Number); const key=`${Math.floor(la/0.05)*0.05},${Math.floor(ln/0.05)*0.05}`; density.set(key,(density.get(key)||0)+1); });
-  density.forEach((cnt,key)=>{ const [la,ln]=key.split(',').map(Number); const op=Math.min(cnt*0.08,0.8);
-    L.rectangle([[la,ln],[la+0.05,ln+0.05]],{color:'#ff0000',fillColor:'#ff0000',fillOpacity:op,weight:0,interactive:false}).addTo(heatmapLayer);
-  });
+  return [...new Set(keys)];
 }
 
-/* ===== Controls ===== */
-function centerOnMyCountry(){ const c=countryData[currentCountry].center; map.flyTo(c,6,{animate:true,duration:1.2}); }
-function resetView(){ map.setView(countryData[currentCountry].center,5); notify('View reset','info'); }
+/* ====== Auth ====== */
+signInBtn.onclick = async ()=>{
+  const provider = new firebase.auth.GoogleAuthProvider();
+  await auth.signInWithPopup(provider);
+};
+signOutBtn.onclick = ()=> auth.signOut();
 
-/* ===== Init helpers ===== */
-function populateCountrySelect(){
-  const sel=document.getElementById('countrySelect');
-  const codes=Object.keys(countryData).sort((a,b)=>countryData[a].name.localeCompare(countryData[b].name));
-  sel.innerHTML='';
-  for(const code of codes){
-    const o=document.createElement('option'); const c=countryData[code];
-    o.value=code; o.textContent=`${c.flag} ${c.name}`; if(code===currentCountry) o.selected=true;
-    sel.appendChild(o);
+auth.onAuthStateChanged(async (user)=>{
+  me = user;
+  if(me){
+    signInBtn.style.display = 'none';
+    signOutBtn.style.display = '';
+    avatar.style.display = '';
+    avatar.src = me.photoURL || '';
+    // user doc merge
+    await db.collection('users').doc(me.uid).set({
+      displayName: me.displayName || 'Anonymous',
+      photoURL: me.photoURL || '',
+      tiles: firebase.firestore.FieldValue.increment(0) // ensure field
+    }, {merge:true});
+  }else{
+    signInBtn.style.display = '';
+    signOutBtn.style.display = 'none';
+    avatar.style.display = 'none';
   }
-}
-function updateHotspot(){
-  const list=['Tokyo','Seoul','London','Paris','New York','Beijing','Sydney','São Paulo'];
-  document.getElementById('hotspot').textContent=list[Math.floor(Math.random()*list.length)];
-}
-function initializeGame(){
-  // minimal initial paints (display only; not counted into ranking)
-  for(let i=0;i<INITIAL_TERRITORIES;i++){
-    const codes=Object.keys(countryData); const code=codes[Math.floor(Math.random()*codes.length)];
-    const c=countryData[code].center;
-    const lat=c[0]+(Math.random()-0.5)*20, lng=c[1]+(Math.random()-0.5)*20;
-    territories.set(getCoordKey(lat,lng),{owner:code,color:autoCountryColor(code)});
-  }
-  redraw(); updateStats(); updateHotspot();
-  renderLeaderboard();             // render from persisted data
-}
-
-/* ===== DOM Ready ===== */
-document.addEventListener('DOMContentLoaded',()=>{
-  // Tabs
-  document.querySelectorAll('.tab').forEach(btn=>{
-    btn.addEventListener('click',()=> setActiveTab(btn.dataset.period));
-  });
-
-  // Countries
-  populateCountrySelect();
-
-  // Map
-  if(initMap()) initializeGame();
-
-  // Country change
-  document.getElementById('countrySelect').addEventListener('change',e=>{
-    currentCountry=e.target.value; updateStats(); centerOnMyCountry();
-  });
-
-  // Brush mode buttons
-  const btnSolid=document.getElementById('modeSolid');
-  const btnPalette=document.getElementById('modePalette');
-  const btnRainbow=document.getElementById('modeRainbow');
-  btnSolid.onclick=()=>{ brush.mode='solid'; setActive('modeSolid'); };
-  btnPalette.onclick=()=>{ brush.mode='palette'; setActive('modePalette'); };
-  btnRainbow.onclick=()=>{ brush.mode='rainbow'; setActive('modeRainbow'); };
-
-  // Live color binding + preview
-  const solidInput=document.getElementById('solidColor');
-  const swatchDot=document.getElementById('swatchDot');
-  const swatchText=document.getElementById('swatchText');
-  const updateSwatch=()=>{ const v=solidInput.value; if(swatchDot) swatchDot.style.background=v; if(swatchText) swatchText.textContent=v.toLowerCase(); };
-  solidInput.addEventListener('input', updateSwatch);   // ← 選んだ瞬間に反映（“前の色”対策）
-  updateSwatch();
-
-  // Dummy online / hotspot
-  setInterval(()=>{ document.getElementById('onlineUsers').textContent=Math.floor(Math.random()*500)+200; }, 10000);
-  setInterval(updateHotspot, 15000);
 });
+
+/* ====== Map ====== */
+function initMap(){
+  map = L.map('map',{
+    worldCopyJump:true,
+    minZoom:2, maxZoom:19,
+    center:[35.68,139.76], zoom:5
+  });
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+    maxZoom: 19, attribution:'© OpenStreetMap contributors'
+  }).addTo(map);
+  territoryLayer.addTo(map);
+
+  map.on("click", onMapClick);
+
+  // draw existing tiles (live)
+  db.collection('territories').onSnapshot(snap=>{
+    territoryLayer.clearLayers();
+    totalTilesEl.textContent = snap.size;
+    snap.forEach(doc=>{
+      const [la,ln] = doc.id.split(',').map(Number);
+      const bounds = [[la, ln],[la+GRID_SIZE, ln+GRID_SIZE]];
+      const col = doc.data().color || '#ff4b4b';
+      const rect = L.rectangle(bounds,{
+        color: col, fillColor: col, fillOpacity:.6, weight:1
+      });
+      rect.bindTooltip(doc.data().ownerName || 'Unknown', {sticky:true});
+      territoryLayer.addLayer(rect);
+    });
+  });
+
+  // ranking（top 10）
+  db.collection('users').orderBy('tiles','desc').limit(10)
+    .onSnapshot(snap=>{
+      rankingList.innerHTML='';
+      snap.forEach(doc=>{
+        const li = document.createElement('li');
+        const d = doc.data();
+        li.textContent = `${d.displayName || 'Unknown'} — ${d.tiles || 0}`;
+        rankingList.appendChild(li);
+      });
+    });
+
+  // my tile count（live）
+  auth.onAuthStateChanged(u=>{
+    if(!u){ myTiles = 0; myTilesEl.textContent = '0'; return;}
+    db.collection('users').doc(u.uid).onSnapshot(ds=>{
+      myTiles = (ds.data() && ds.data().tiles) || 0;
+      myTilesEl.textContent = String(myTiles);
+    });
+  });
+
+  // fake online
+  setInterval(()=>{
+    onlineEl.textContent = String(Math.floor(Math.random()*400)+200);
+  }, 8000);
+}
+
+/* ====== Click → Claim with Brush ====== */
+async function onMapClick(e){
+  if(!me){ toast('Please sign in first.'); return; }
+  if(!canPlace){ toast('Cooling down…'); return; }
+
+  const keys = getBrushKeys(e.latlng.lat, e.latlng.lng, BRUSH_SIZE);
+  const dur = COOLDOWN_BASE_MS * keys.length;
+
+  let changed = 0;
+  for(const key of keys){
+    const ok = await claimTileByKey(key);
+    if(ok) changed++;
+  }
+  if(changed>0){
+    addActivity(`${me.displayName||'You'} claimed ${changed} tile(s)`);
+    startCooldown(dur);
+  }
+}
+
+// 1 tile claim (transaction)
+async function claimTileByKey(key){
+  const tileRef = db.collection('territories').doc(key);
+  try{
+    await db.runTransaction(async tx=>{
+      const snap = await tx.get(tileRef);
+      if(snap.exists){
+        const prev = snap.data();
+        if(prev.owner === me.uid){ return; } // already mine
+        // previous -1
+        if(prev.owner){
+          tx.update(db.collection('users').doc(prev.owner), {
+            tiles: firebase.firestore.FieldValue.increment(-1)
+          });
+        }
+      }
+      // set mine
+      tx.set(tileRef,{
+        owner: me.uid,
+        ownerName: me.displayName || 'Anonymous',
+        color: currentColor,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      // me +1
+      tx.set(db.collection('users').doc(me.uid), {
+        displayName: me.displayName || 'Anonymous',
+        photoURL: me.photoURL || '',
+        tiles: firebase.firestore.FieldValue.increment(1)
+      }, {merge:true});
+    });
+    return true;
+  }catch(err){
+    console.error('claimTileByKey', err);
+    return false;
+  }
+}
+
+/* ====== Cooldown ====== */
+function startCooldown(ms){
+  canPlace = false; cooldownEl.style.display='flex';
+  const total = ms; let remain = total;
+  const tick = ()=>{
+    remain -= 100;
+    if(remain <= 0){
+      cooldownFill.style.width='0%';
+      cooldownSec.textContent = `${COOLDOWN_BASE_MS/1000}s`;
+      cooldownEl.style.display='none';
+      canPlace = true; clearInterval(cooldownTimer); return;
+    }
+    cooldownFill.style.width = `${(total-remain)/total*100}%`;
+    cooldownSec.textContent = `${Math.ceil(remain/1000)}s`;
+  };
+  clearInterval(cooldownTimer);
+  cooldownTimer = setInterval(tick, 100);
+}
+
+/* ====== UI bind ====== */
+function bindUI(){
+  // brush buttons
+  if(brushGroup){
+    brushGroup.querySelector('[data-brush="1"]').classList.add('active');
+    brushGroup.addEventListener('click', (ev)=>{
+      const btn = ev.target.closest('button[data-brush]');
+      if(!btn) return;
+      brushGroup.querySelectorAll('button').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      BRUSH_SIZE = parseInt(btn.dataset.brush,10);
+    });
+  }
+  // color
+  colorPicker.addEventListener('input', ()=>{
+    currentColor = colorPicker.value;
+    colorHex.value = currentColor;
+  });
+  colorHex.addEventListener('input', ()=>{
+    let v = colorHex.value.trim();
+    if(!/^#/.test(v)) v = '#'+v;
+    if(/^#([0-9a-fA-F]{6})$/.test(v)){
+      currentColor = v;
+      colorPicker.value = v;
+    }
+  });
+}
+
+/* ====== Activity UI ====== */
+function addActivity(text){
+  const item = document.createElement('div');
+  item.className = 'item';
+  item.textContent = `${new Date().toLocaleTimeString()} — ${text}`;
+  activityList.prepend(item);
+  while(activityList.childElementCount>10){
+    activityList.lastElementChild.remove();
+  }
+}
+
+/* ====== Start ====== */
+bindUI();
+initMap();
