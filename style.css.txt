@@ -1,0 +1,149 @@
+:root{
+  --bg:#0f172a;        /* 背景 */
+  --panel:#111827;     /* パネル */
+  --text:#e5e7eb;      /* 文字 */
+  --muted:#9ca3af;
+  --accent:#60a5fa;    /* アクセント */
+  --glass: rgba(17,24,39,.6);
+  --radius:12px;
+  --shadow: 0 6px 20px rgba(0,0,0,.25);
+}
+
+*{ box-sizing:border-box; }
+html,body{
+  height:100%;
+  margin:0;
+  background:var(--bg);
+  color:var(--text);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans JP", sans-serif;
+}
+
+/* 極小フローティングバー（上部） */
+.floating-bar{
+  position:fixed;
+  z-index:1000;
+  top:8px; left:8px; right:8px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:6px 8px;
+  border-radius:14px;
+  backdrop-filter: blur(8px);
+  background: var(--glass);
+  box-shadow: var(--shadow);
+}
+.brand{
+  font-weight:700;
+  letter-spacing:.2px;
+}
+.inline-controls{
+  display:flex; align-items:center; gap:8px;
+}
+.country-pill{
+  display:flex; align-items:center; gap:6px;
+  padding:6px 8px;
+  border-radius:999px;
+  background: rgba(255,255,255,.08);
+}
+.country-pill .label{ font-size:.8rem; color:var(--muted) }
+.country-pill select{
+  background:transparent; color:var(--text);
+  border:none; outline:none; padding:2px 2px;
+  font-size:.9rem; max-width:38vw;
+}
+.pill-btn{
+  padding:6px 10px; border-radius:999px;
+  border:none; color:#0b1220; background:#fff;
+  font-weight:600;
+}
+
+/* 地図を最前面に広げる */
+#mapWrap{ position:relative; }
+#map{
+  width:100%;
+  height:100vh; /* JSで上書き（innerHeight） */
+}
+
+/* オーバーレイ群（マップ上に小さく） */
+.map-overlay{
+  position:absolute; z-index:900;
+  display:flex; gap:10px; align-items:center;
+}
+.bottom-right{ right:12px; bottom:12px; }
+.stack{ flex-direction:column; align-items:flex-end; }
+
+.color-chip{
+  width:44px; height:44px; border-radius:12px;
+  background:var(--panel); box-shadow:var(--shadow);
+  display:grid; place-items:center;
+}
+.color-chip input[type="color"]{
+  -webkit-appearance:none; appearance:none;
+  width:34px; height:34px; padding:0; border:none; background:none;
+  border-radius:8px; cursor:pointer;
+}
+
+/* クールダウン */
+.cooldown{
+  position:relative; width:160px; height:10px;
+  background:rgba(255,255,255,.15);
+  border-radius:999px; overflow:hidden;
+  box-shadow:var(--shadow);
+}
+.cooldown.hidden{ display:none; }
+.cooldown .bar{
+  position:absolute; left:0; top:0; bottom:0; width:0%;
+  background:linear-gradient(90deg, #34d399, #60a5fa);
+}
+.cooldown .t{
+  position:absolute; right:6px; top:-20px; font-size:.8rem;
+}
+
+/* 下の情報パネル：デフォルトは畳む */
+.info-panels{
+  padding:8px; max-width:900px; margin:0 auto 32px;
+}
+details{
+  border-radius:var(--radius);
+  background: var(--panel);
+  margin:8px 0; box-shadow:var(--shadow);
+}
+details > summary{
+  list-style:none; cursor:pointer; padding:14px 16px;
+  font-weight:700;
+}
+details[open] > summary{ border-bottom:1px solid rgba(255,255,255,.08) }
+details > div{ padding:14px 16px; }
+
+/* セグメントボタン */
+.seg{ display:flex; gap:6px; flex-wrap:wrap; }
+.seg-btn{
+  padding:8px 12px; border-radius:10px; background:#1f2937;
+  border:1px solid rgba(255,255,255,.06); color:var(--text);
+}
+.seg-btn.active{ background:#35517a; border-color:#4774b3 }
+
+/* 統計 */
+.stats-grid{
+  display:grid; grid-template-columns: repeat(3,minmax(0,1fr));
+  gap:10px;
+}
+.stats-grid div{
+  background:#1f2937; padding:10px; border-radius:10px;
+}
+.stats-grid small{ color:var(--muted) }
+.stats-grid strong{ font-size:1.15rem }
+
+/* 入力類 */
+.control-block .row{ display:flex; gap:8px; align-items:center; margin:8px 0 }
+.mono{
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+.btn.small{ padding:8px 12px; border:none; border-radius:10px; background:#3b82f6; color:#fff }
+
+/* ------- レスポンシブ ------- */
+@media (min-width: 768px){
+  /* タブレット以上でもヘッダーは小さめのまま */
+  .country-pill select{ max-width: 260px; }
+  .info-panels{ padding: 12px; }
+}
