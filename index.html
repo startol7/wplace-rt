@@ -10,20 +10,28 @@
 </head>
 <body>
   <header class="topbar">
-    <div class="brand">🌍 TePlace — Real World Map Conquest</div>
-    <div class="controls">
+    <div class="brand">🌍 TePlace</div>
+
+    <!-- 横並びコントロール（モバイルで折り返さない） -->
+    <div class="controls controls-inline">
       <label class="country-label">
         <span>Your country:</span>
         <select id="countrySelect"></select>
       </label>
-      <button id="signInBtn" class="btn">Sign in</button>
-      <button id="signOutBtn" class="btn hidden">Sign out</button>
+      <div class="auth-row">
+        <button id="signInBtn" class="btn">Sign in</button>
+        <button id="signOutBtn" class="btn hidden">Sign out</button>
+      </div>
     </div>
   </header>
 
   <main class="main">
     <section class="map-wrap">
       <div id="map"></div>
+      <div id="cooldown" class="cooldown hidden">
+        <div id="cooldownFill" class="cooldown-fill"></div>
+      </div>
+      <div class="cooldown-text">Next: <span id="cooldownText">0s</span></div>
     </section>
 
     <aside class="side">
@@ -34,9 +42,7 @@
           <button class="seg-btn" data-period="week">Week</button>
           <button class="seg-btn" data-period="month">Month</button>
         </div>
-        <ul id="rankingList" class="ranking">
-          <li>No data yet</li>
-        </ul>
+        <ul id="rankingList" class="ranking"><li>No data yet</li></ul>
       </section>
 
       <section class="card">
@@ -47,12 +53,7 @@
       </section>
 
       <section class="card">
-        <div class="card-title">🖌️ Brush & Color</div>
-        <div class="seg">
-          <button class="seg-btn active" data-brush="1">1×1</button>
-          <button class="seg-btn" data-brush="2">2×2</button>
-          <button class="seg-btn" data-brush="3">3×3</button>
-        </div>
+        <div class="card-title">🎨 Color</div>
         <label class="color-row">
           <span>Color</span>
           <input id="colorHex" class="color-hex" value="#ff4b4b" maxlength="7" />
@@ -69,18 +70,7 @@
           <input id="tileCustom" type="number" step="0.0001" />
           <button id="tileApply" class="btn">Apply</button>
         </div>
-      </section>
-
-      <section class="card">
-        <div class="card-title">⏳ Cooldown</div>
-        <div id="cooldown" class="cooldown hidden">
-          <div id="cooldownFill" class="cooldown-fill"></div>
-        </div>
-        <div class="cooldown-text">Next: <span id="cooldownText">0s</span></div>
-        <p class="note">
-          1×1 = 10s ・ 2×2 = 40s ・ 3×3 = 90s cooldown<br>
-          Click the map to claim tiles.
-        </p>
+        <p class="note">1×1 only ・ Cooldown: 10s</p>
       </section>
     </aside>
   </main>
