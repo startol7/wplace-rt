@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>About TePlace — Real World Map Conquest Game</title>
+  <meta name="description" content="Learn about TePlace, a free online world map conquest game inspired by r/place and WPlace. Paint tiles, capture territories, and climb Today/Week/Month/All-time rankings.">
+  <link rel="canonical" href="https://YOUR-DOMAIN.com/about.html">
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <header class="header">
+    <h1>About TePlace</h1>
+    <nav><a href="./">← Back to game</a></nav>
+  </header>
+
+  <main class="main-container" style="flex-direction:column;padding:20px;gap:12px;">
+    <section>
+      <h2>What is TePlace?</h2>
+      <p><strong>TePlace</strong> is an online world map game where players paint tiny tiles on the real map and capture territories for their country. It features <em>Today</em>, <em>Week</em>, <em>Month</em>, and <em>All-time</em> leaderboards persisted on your device.</p>
+      <p>Inspired by community projects like <em>r/place</em> and <em>WPlace</em>, TePlace focuses on geography, rankings, and colorful creativity.</p>
+    </section>
+
+    <section>
+      <h2>How to Play</h2>
+      <ol>
+        <li>Select your country from the header.</li>
+        <li>Choose a color (updates instantly) and click the map to paint.</li>
+        <li>Capture enemy tiles and climb the leaderboards.</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>Notes</h2>
+      <p>Online users count is a demo number. To count real presence, you’ll need a realtime backend (WebSocket, etc.).</p>
+    </section>
+
+    <section>
+      <h2>Credits</h2>
+      <p>Built with Leaflet and map tiles by OpenStreetMap contributors (with fallback providers like CARTO and Stamen).</p>
+    </section>
+  </main>
+</body>
+</html>
