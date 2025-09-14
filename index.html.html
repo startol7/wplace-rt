@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>TePlace — Real World Map Conquest</title>
+
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet"
+        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+        crossorigin="anonymous"/>
+
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <header class="appHeader">
+    <div class="brand">
+      <span class="logo">🌍</span>
+      <span class="title">TePlace — Real World Map Conquest</span>
+    </div>
+    <div class="headerRight">
+      <div class="auth">
+        <img id="avatar" class="avatar" alt="">
+        <button id="signInBtn" class="btn">Sign in</button>
+        <button id="signOutBtn" class="btn outline" style="display:none;">Sign out</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="layout">
+    <section class="mapWrap">
+      <div id="map"></div>
+
+      <!-- Cooldown -->
+      <div id="cooldownBar" class="cooldown">
+        <span>⏳ Next:</span>
+        <div class="bar"><div id="cooldownFill" class="fill"></div></div>
+        <span id="cooldownSec">10s</span>
+      </div>
+    </section>
+
+    <aside class="sidebar">
+      <div class="panel">
+        <h3>🏆 World Ranking</h3>
+        <ol id="rankingList" class="ranking"></ol>
+      </div>
+
+      <div class="panel">
+        <h3>📈 Statistics</h3>
+        <div class="statRow"><span>Total territories</span><b id="totalTiles">0</b></div>
+        <div class="statRow"><span>My territories</span><b id="myTiles">0</b></div>
+        <div class="statRow"><span>Online (approx)</span><b id="onlineUsers">0</b></div>
+      </div>
+
+      <div class="panel">
+        <h3>🎨 Brush & Color</h3>
+
+        <div class="brushRow">
+          <label class="muted">Brush</label>
+          <div id="brushGroup" class="btnGroup">
+            <button class="btn small" data-brush="1">1×1</button>
+            <button class="btn small" data-brush="2">2×2</button>
+            <button class="btn small" data-brush="3">3×3</button>
+          </div>
+        </div>
+
+        <div class="colorRow">
+          <label class="muted">Color</label>
+          <input id="colorPicker" type="color" value="#ff4b4b"/>
+          <input id="colorHex" type="text" value="#ff4b4b" class="hexInput"/>
+        </div>
+
+        <p class="hint">
+          • 1×1 = 10s / 2×2 = 40s / 3×3 = 90s cooldown<br/>
+          • Click to claim tiles
+        </p>
+      </div>
+
+      <div class="panel">
+        <h3>⚔️ Battle Log</h3>
+        <div id="activityList" class="activity"></div>
+      </div>
+    </aside>
+  </main>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+          integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+          crossorigin="anonymous"></script>
+
+  <!-- Firebase (v9 compat) -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+  <script src="./script.js"></script>
+</body>
+</html>
