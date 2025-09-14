@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <title>TePlace — Real World Map Conquest</title>
   <link rel="stylesheet" href="style.css" />
+  <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 </head>
 <body>
@@ -33,7 +34,9 @@
           <button class="seg-btn" data-period="week">Week</button>
           <button class="seg-btn" data-period="month">Month</button>
         </div>
-        <ul id="rankingList" class="ranking"><li>No data yet</li></ul>
+        <ul id="rankingList" class="ranking">
+          <li>No data yet</li>
+        </ul>
       </section>
 
       <section class="card">
@@ -44,7 +47,12 @@
       </section>
 
       <section class="card">
-        <div class="card-title">🖌️ Color</div>
+        <div class="card-title">🖌️ Brush & Color</div>
+        <div class="seg">
+          <button class="seg-btn active" data-brush="1">1×1</button>
+          <button class="seg-btn" data-brush="2">2×2</button>
+          <button class="seg-btn" data-brush="3">3×3</button>
+        </div>
         <label class="color-row">
           <span>Color</span>
           <input id="colorHex" class="color-hex" value="#ff4b4b" maxlength="7" />
@@ -69,12 +77,17 @@
           <div id="cooldownFill" class="cooldown-fill"></div>
         </div>
         <div class="cooldown-text">Next: <span id="cooldownText">0s</span></div>
-        <p class="note">Cooldown: 10s per tile</p>
+        <p class="note">
+          1×1 = 10s ・ 2×2 = 40s ・ 3×3 = 90s cooldown<br>
+          Click the map to claim tiles.
+        </p>
       </section>
     </aside>
   </main>
 
+  <!-- Leaflet JS -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <!-- App -->
   <script src="script.js" type="module"></script>
 </body>
 </html>
