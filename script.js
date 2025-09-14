@@ -138,14 +138,14 @@ async function ensureFirebaseInitialized(){
 
     // ==== REPLACE WITH YOUR FIREBASE CONFIG ====
     const firebaseConfig = {
-  apiKey: "AIzaSyA2IxeqJxFZzlmuqu0n4W3wXa2VpzZISBE",
-  authDomain: "wwplace-b6a86.firebaseapp.com",
-  projectId: "wwplace-b6a86",
-  storageBucket: "wwplace-b6a86.firebasestorage.app",
-  messagingSenderId: "1005360971581",
-  appId: "1:1005360971581:web:3f23bdb25cdac844050f54",
-  measurementId: "G-4F90EG7W7N"
-};
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_PROJECT.firebaseapp.com",
+      projectId: "YOUR_PROJECT_ID",
+      storageBucket: "YOUR_PROJECT.appspot.com",
+      messagingSenderId: "YOUR_SENDER_ID",
+      appId: "YOUR_APP_ID",
+      measurementId: "G-XXXX"
+    };
     // ==========================================
 
     const app = initializeApp(firebaseConfig);
