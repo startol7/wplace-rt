@@ -10,13 +10,11 @@
 <body>
   <header class="appbar">
     <div class="brand">🌍 TePlace</div>
-
     <div class="controls">
       <label class="country-label">
         Your country:
         <select id="countrySelect"></select>
       </label>
-
       <button id="signInBtn" class="ghost">Sign in</button>
       <button id="signOutBtn" class="ghost hidden">Sign out</button>
     </div>
@@ -62,7 +60,21 @@
           <input type="color" id="colorPicker" value="#ff4b4b" />
           <input type="text" id="colorHex" value="#ff4b4b" />
         </div>
-        <small>1×1=10s / 2×2=40s / 3×3=90s cooldown</small>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">🧩 Pixel size</div>
+        <div class="seg">
+          <button class="seg-btn" data-tile="0.001">Large</button>
+          <button class="seg-btn active" data-tile="0.0005">Medium</button>
+          <button class="seg-btn" data-tile="0.0002">Small</button>
+        </div>
+        <div class="row">
+          <label>Custom</label>
+          <input id="tileCustom" type="number" min="0.00001" step="0.00001" value="0.0005">
+          <button id="tileApply" class="ghost">Apply</button>
+        </div>
+        <small>Tip: 0.0005 ≒ 55m、0.0002 ≒ 22m。小さくするほど重くなります。</small>
       </div>
     </aside>
   </main>
@@ -71,10 +83,7 @@
     <small>© OpenStreetMap contributors • Built for demo</small>
   </footer>
 
-  <!-- Leaflet -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
-  <!-- Firebase (modular) -->
   <script type="module" src="./script.js"></script>
 </body>
 </html>
