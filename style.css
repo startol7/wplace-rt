@@ -66,9 +66,224 @@ body{
 }
 #map{width:100%;height:100%}
 
-/* Mobile Controls (hidden on desktop) */
-.mobile-controls{display:none}
-.mobile-bottom-sheet{display:none}
+/* Mobile Color Control - Top Right */
+.mobile-color-control{
+  display:none;
+  position:fixed;
+  top:70px;
+  right:15px;
+  z-index:1000;
+}
+
+.mobile-color-input{
+  width:48px;
+  height:48px;
+  border:3px solid #fff;
+  border-radius:50%;
+  cursor:pointer;
+  box-shadow:0 2px 10px rgba(0,0,0,0.3), 0 0 0 2px var(--brand);
+}
+
+/* Mobile Panel - Bottom */
+.mobile-panel{
+  display:none;
+  position:fixed;
+  bottom:0;
+  left:0;
+  right:0;
+  background:var(--panel);
+  border-top:2px solid var(--brand);
+  height:120px;
+  z-index:900;
+}
+
+.mobile-tabs{
+  display:flex;
+  justify-content:space-around;
+  padding:8px;
+  border-bottom:1px solid var(--line);
+}
+
+.mobile-tab{
+  background:none;
+  border:none;
+  color:var(--muted);
+  font-size:20px;
+  padding:4px 12px;
+  cursor:pointer;
+  transition:all 0.2s;
+}
+
+.mobile-tab.active{
+  color:var(--brand);
+  transform:scale(1.2);
+}
+
+.mobile-content{
+  padding:8px;
+  height:calc(100% - 45px);
+  overflow-y:auto;
+}
+
+.mobile-section{
+  display:none;
+}
+
+.mobile-section.active{
+  display:block;
+}
+
+/* Mobile Ranking */
+.period-selector{
+  display:flex;
+  gap:8px;
+  margin-bottom:8px;
+}
+
+.period-btn{
+  flex:1;
+  padding:4px;
+  background:var(--btn);
+  border:1px solid var(--line);
+  border-radius:6px;
+  color:var(--text);
+  font-size:12px;
+  cursor:pointer;
+}
+
+.period-btn.active{
+  background:var(--brand);
+  color:#fff;
+}
+
+.mobile-ranking{
+  list-style:none;
+  padding:0;
+  margin:0;
+  font-size:13px;
+}
+
+.mobile-ranking li{
+  display:flex;
+  justify-content:space-between;
+  padding:3px 0;
+  border-bottom:1px dashed var(--line);
+}
+
+/* Mobile Stats */
+.stats-container{
+  display:flex;
+  justify-content:space-around;
+  padding:10px 0;
+}
+
+.stat-item{
+  text-align:center;
+}
+
+.stat-number{
+  font-size:24px;
+  font-weight:bold;
+  color:var(--brand);
+}
+
+.stat-name{
+  font-size:12px;
+  color:var(--muted);
+}
+
+/* Mobile Timer */
+.timer-display{
+  text-align:center;
+  padding:15px;
+}
+
+.cooldown-bar{
+  width:100%;
+  height:8px;
+  background:rgba(0,0,0,0.3);
+  border-radius:4px;
+  margin-bottom:10px;
+  overflow:hidden;
+}
+
+.cooldown-progress{
+  height:100%;
+  background:linear-gradient(90deg,#10b981,#60a5fa);
+  transition:width 0.1s;
+}
+
+.timer-text{
+  font-size:16px;
+  color:var(--text);
+}
+
+/* Mobile Info */
+.info-content{
+  text-align:center;
+  padding:10px;
+}
+
+.info-link{
+  color:var(--brand);
+  text-decoration:none;
+}
+
+/* Mobile Styles */
+@media (max-width: 768px){
+  body{overflow:hidden}
+  
+  .topbar{
+    padding:8px 12px;height:50px;
+  }
+  .brand-title{font-size:16px}
+  .country-label-text{display:none}
+  .country-label select{padding:5px 24px 5px 8px;font-size:13px}
+  .btn{padding:5px 10px;font-size:13px}
+  
+  .main{
+    grid-template-columns:1fr;
+    padding:0;gap:0;
+    height:calc(100vh - 50px);
+  }
+  
+  .desktop-side{display:none}
+  
+  .map-wrap{
+    border-radius:0;border:none;
+    height:calc(100vh - 50px - 120px);
+  }
+  
+  .mobile-color-control{
+    display:block;
+  }
+  
+  .mobile-panel{
+    display:block;
+  }
+  
+  /* Hide all Leaflet controls except zoom */
+  .leaflet-control-attribution,
+  .leaflet-control-layers{
+    display:none!important;
+  }
+  
+  /* Position zoom control */
+  .leaflet-top.leaflet-left{
+    top:10px;
+    left:10px;
+  }
+  
+  .leaflet-control-zoom{
+    border-radius:10px!important;
+    box-shadow:0 2px 8px rgba(0,0,0,0.3)!important;
+  }
+  
+  /* Toast on mobile */
+  .toast-container{
+    top:60px;
+  }
+}
 
 /* Desktop Sidebar */
 .desktop-side{display:flex;flex-direction:column;gap:14px;overflow-y:auto;overflow-x:hidden}

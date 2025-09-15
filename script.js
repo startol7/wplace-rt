@@ -568,46 +568,26 @@ document.querySelectorAll('.seg-btn[data-period], .seg-btn[data-period-mobile]')
   });
 });
 
-// モバイルボトムシートタブ
-document.querySelectorAll('.sheet-tab').forEach(tab => {
+// モバイルタブ切り替え
+document.querySelectorAll('.mobile-tab').forEach(tab => {
   tab.addEventListener('click', () => {
-    document.querySelectorAll('.sheet-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.mobile-tab').forEach(t => t.classList.remove('active'));
     tab.classList.add('active');
     
-    document.querySelectorAll('.sheet-panel').forEach(p => p.classList.remove('active'));
-    const panel = document.getElementById(`panel-${tab.dataset.tab}`);
-    if (panel) panel.classList.add('active');
+    document.querySelectorAll('.mobile-section').forEach(s => s.classList.remove('active'));
+    const section = document.getElementById(`section-${tab.dataset.tab}`);
+    if (section) section.classList.add('active');
   });
 });
 
-// モバイルボトムシート展開
-const bottomSheet = document.querySelector('.mobile-bottom-sheet');
-const sheetHandle = document.querySelector('.sheet-handle');
-
-if (sheetHandle && bottomSheet && isMobile) {
-  let dragStart = { y: 0, height: 0, dragging: false };
-  
-  sheetHandle.addEventListener('touchstart', (e) => {
-    dragStart.dragging = true;
-    dragStart.y = e.touches[0].clientY;
-    dragStart.height = bottomSheet.offsetHeight;
-    bottomSheet.style.transition = 'none';
+// モバイル期間ボタン
+document.querySelectorAll('.period-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    subscribeToRanking();
   });
-  
-  document.addEventListener('touchmove', (e) => {
-    if (!dragStart.dragging) return;
-    const delta = dragStart.y - e.touches[0].clientY;
-    const newHeight = Math.max(180, Math.min(window.innerHeight * 0.6, dragStart.height + delta));
-    bottomSheet.style.height = newHeight + 'px';
-  });
-  
-  document.addEventListener('touchend', () => {
-    if (!dragStart.dragging) return;
-    dragStart.dragging = false;
-    bottomSheet.style.transition = 'height 0.3s ease';
-    
-    if (bottomSheet.offsetHeight > 250) {
-      bottomSheet.classList.add('expanded');
+});.classList.add('expanded');
       bottomSheet.style.height = '60vh';
     } else {
       bottomSheet.classList.remove('expanded');
