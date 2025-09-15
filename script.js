@@ -32,8 +32,10 @@ const map = L.map('map', {
   worldCopyJump: true,
   zoomControl: !isMobile,
   tap: true,
-  touchZoom: true,
-  dragging: true
+  touchZoom: true,  // Enable pinch zoom on mobile
+  dragging: true,
+  scrollWheelZoom: true,
+  doubleClickZoom: true
 }).setView([35.6762, 139.6503], isMobile ? 5 : 6);
 
 // Add zoom control for mobile in top-left
@@ -41,73 +43,84 @@ if (isMobile) {
   L.control.zoom({ position: 'topleft' }).addTo(map);
 }
 
-const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  attribution: '© OpenStreetMap',
-  maxZoom: 19,
-  detectRetina: true,
-  subdomains: 'abc'
-});
-osm.on('tileerror', e => console.error('OSM tile error:', e));
-osm.addTo(map);
+// Add tile layer with fallback
+const tileProviders = [
+  {
+    url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    options: {
+      attribution: '© OpenStreetMap contributors',
+      maxZoom: 19,
+      detectRetina: true,
+      subdomains: 'abc'
+    }
+  },
+  {
+    url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+    options: {
+      attribution: '© CARTO',
+      maxZoom: 19,
+      detectRetina: true,
+      subdomains: 'abcd'
+    }
+  }
+];
+
+let tileLayer = null;
+let currentProviderIndex = 0;
+
+function addTileLayer() {
+  const provider = tileProviders[currentProviderIndex];
+  tileLayer = L.tileLayer(provider.url, provider.options);
+  
+  tileLayer.on('tileerror', function(error) {
+    console.warn('Tile load error, trying fallback:', error);
+    if (currentProviderIndex < tileProviders.length - 1) {
+      currentProviderIndex++;
+      map.removeLayer(tileLayer);
+      addTileLayer();
+    }
+  });
+  
+  tileLayer.addTo(map);
+}
+
+addTileLayer();
 
 // Ensure map renders properly
-setTimeout(() => map.invalidateSize(), 150);
+setTimeout(() => map.invalidateSize(), 300);
 
+// Layer for painted tiles
 const layerTiles = L.layerGroup().addTo(map);
 
 // ----------------------------
-// 2. タイルサイズ
+// 2. タイルサイズ (固定: 0.0005°)
 // ----------------------------
-let TILE = parseFloat(localStorage.getItem('tile') || '0.0005');
-const tileInput = document.getElementById('tileCustom');
-if (tileInput) tileInput.value = TILE;
-
-// Desktop tile size buttons
-document.querySelectorAll('.seg-btn[data-tile]').forEach(b => {
-  b.addEventListener('click', () => {
-    document.querySelectorAll('.seg-btn[data-tile]').forEach(x => x.classList.remove('active'));
-    b.classList.add('active');
-    setTile(parseFloat(b.dataset.tile));
-  });
-});
-
-// Mobile tile size buttons
-document.querySelectorAll('.seg-btn[data-tile-mobile]').forEach(b => {
-  b.addEventListener('click', () => {
-    document.querySelectorAll('.seg-btn[data-tile-mobile]').forEach(x => x.classList.remove('active'));
-    b.classList.add('active');
-    setTile(parseFloat(b.dataset.tileMobile));
-  });
-});
-
-const applyBtn = document.getElementById('tileApply');
-if (applyBtn) {
-  applyBtn.addEventListener('click', () => {
-    const v = parseFloat(tileInput.value);
-    if (!isFinite(v) || v <= 0) { 
-      toast('Invalid tile size'); 
-      return; 
-    }
-    setTile(v);
-  });
-}
-
-function setTile(v) {
-  TILE = v;
-  localStorage.setItem('tile', String(v));
-  console.log('TILE set ->', TILE);
-}
+const TILE = 0.0005;  // Fixed tile size for consistency
 
 const snap = v => Math.floor(v / TILE) * TILE;
 const keyFromLatLng = (lat, lng) => `${snap(lat).toFixed(6)},${snap(lng).toFixed(6)}`;
+
+// Store tiles with their original properties
+const tileRegistry = new Map();
+
 const rectFor = (lat, lng, color) => {
-  const lat0 = snap(lat), lng0 = snap(lng);
-  return L.rectangle([[lat0, lng0], [lat0 + TILE, lng0 + TILE]], {
-    color, 
-    fillColor: color, 
-    fillOpacity: 0.5, 
-    weight: 1
-  });
+  const lat0 = snap(lat);
+  const lng0 = snap(lng);
+  const key = keyFromLatLng(lat, lng);
+  
+  // Store the tile info
+  tileRegistry.set(key, { lat: lat0, lng: lng0, color });
+  
+  return L.rectangle(
+    [[lat0, lng0], [lat0 + TILE, lng0 + TILE]], 
+    {
+      color: color, 
+      fillColor: color, 
+      fillOpacity: 0.5, 
+      weight: 1,
+      interactive: false  // Prevent tiles from blocking map clicks
+    }
+  );
 };
 
 // ----------------------------
@@ -205,6 +218,7 @@ document.querySelectorAll('.color-preset').forEach(preset => {
 // ----------------------------
 const BRUSH_COOLDOWN = { 1: 10, 2: 40, 3: 90 };
 let lastPaintAt = 0;
+let cooldownTimer = null;
 
 const cooldownWrap = document.getElementById('cooldown');
 const cooldownFill = document.getElementById('cooldownFill');
@@ -214,22 +228,25 @@ const cooldownFillMobile = document.getElementById('cooldownFillMobile');
 const cooldownTextMobile = document.getElementById('cooldownTextMobile');
 
 function showCooldown(sec) {
+  if (cooldownTimer) clearInterval(cooldownTimer);
+  
   const end = Date.now() + sec * 1000;
   
   // Show both desktop and mobile cooldowns
   if (cooldownWrap) cooldownWrap.classList.remove('hidden');
   if (cooldownMobile) cooldownMobile.classList.remove('hidden');
   
-  const t = setInterval(() => {
+  cooldownTimer = setInterval(() => {
     const left = end - Date.now();
     if (left <= 0) {
       if (cooldownFill) cooldownFill.style.width = '0%';
       if (cooldownFillMobile) cooldownFillMobile.style.width = '0%';
-      if (cooldownText) cooldownText.textContent = '0s';
+      if (cooldownText) cooldownText.textContent = 'Ready';
       if (cooldownTextMobile) cooldownTextMobile.textContent = 'Ready!';
       if (cooldownWrap) cooldownWrap.classList.add('hidden');
       if (cooldownMobile) cooldownMobile.classList.add('hidden');
-      clearInterval(t);
+      clearInterval(cooldownTimer);
+      cooldownTimer = null;
       return;
     }
     const secLeft = Math.ceil(left / 1000);
@@ -239,10 +256,10 @@ function showCooldown(sec) {
     if (cooldownTextMobile) cooldownTextMobile.textContent = secLeft + 's';
     if (cooldownFill) cooldownFill.style.width = progress;
     if (cooldownFillMobile) cooldownFillMobile.style.width = progress;
-  }, 120);
+  }, 100);
 }
 
-const inCd = () => Date.now() - lastPaintAt < BRUSH_COOLDOWN[brushSize] * 1000;
+const inCooldown = () => Date.now() - lastPaintAt < BRUSH_COOLDOWN[brushSize] * 1000;
 
 // ----------------------------
 // 5. Firebase（遅延初期化）
@@ -306,18 +323,29 @@ async function ensureFirebaseInitialized() {
       signOutBtn.classList.toggle('hidden', !u);
       subscribeMine();
       subscribeRanking();
-      if (u) toast('Signed in');
+      if (u) toast('Signed in successfully');
     });
 
-    try { await signInAnonymously(auth); } catch (_) {}
+    // Auto sign in anonymously
+    try { 
+      await signInAnonymously(auth); 
+    } catch (e) {
+      console.log('Auto sign-in skipped');
+    }
 
+    // Subscribe to tiles
     onSnapshot(query(collection(db, 'tiles'), orderBy('ts', 'desc'), limit(5000)), snap => {
       layerTiles.clearLayers();
+      tileRegistry.clear();
       snap.forEach(s => {
         const d = s.data();
-        rectFor(d.lat, d.lng, d.color).addTo(layerTiles);
+        const rect = rectFor(d.lat, d.lng, d.color);
+        rect.addTo(layerTiles);
       });
       updateTotalStat(snap.size);
+    }, error => {
+      console.warn('Tiles subscription error:', error);
+      updateTotalStat(0);
     });
 
     firebaseReady = true;
@@ -325,10 +353,12 @@ async function ensureFirebaseInitialized() {
   } catch (err) {
     console.warn('[Firebase init failed] Guest-only mode:', err);
     firebaseReady = false;
+    toast('Offline mode - drawings won\'t be saved');
     return false;
   }
 }
 
+// Initialize Firebase
 ensureFirebaseInitialized();
 
 // Stats subscriptions
@@ -347,6 +377,8 @@ function subscribeMine() {
       const count = s.exists() ? (s.data().mine || 0) : 0;
       if (statMine) statMine.textContent = count;
       if (statMineMobile) statMineMobile.textContent = count;
+    }, error => {
+      console.warn('Stats subscription error:', error);
     });
   });
 }
@@ -358,7 +390,7 @@ function updateTotalStat(count) {
   if (statTotalMobile) statTotalMobile.textContent = count;
 }
 
-// Period keys
+// Period keys for rankings
 function getPeriodKeys() {
   const now = new Date();
   const y = now.getUTCFullYear();
@@ -385,13 +417,18 @@ async function updateScores(n) {
   if (!firebaseReady || !user) return;
   const { doc, setDoc, increment } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js');
   const p = getPeriodKeys();
-  await Promise.all([
-    setDoc(doc(db, 'scores', p.today, 'countries', currentCountry), { count: increment(n) }, { merge: true }),
-    setDoc(doc(db, 'scores', p.week, 'countries', currentCountry), { count: increment(n) }, { merge: true }),
-    setDoc(doc(db, 'scores', p.month, 'countries', currentCountry), { count: increment(n) }, { merge: true }),
-    setDoc(doc(db, 'stats', 'global'), { total: increment(n) }, { merge: true }),
-    setDoc(doc(db, 'stats', `user-${user.uid}`), { mine: increment(n) }, { merge: true }),
-  ]);
+  
+  try {
+    await Promise.all([
+      setDoc(doc(db, 'scores', p.today, 'countries', currentCountry), { count: increment(n) }, { merge: true }),
+      setDoc(doc(db, 'scores', p.week, 'countries', currentCountry), { count: increment(n) }, { merge: true }),
+      setDoc(doc(db, 'scores', p.month, 'countries', currentCountry), { count: increment(n) }, { merge: true }),
+      setDoc(doc(db, 'stats', 'global'), { total: increment(n) }, { merge: true }),
+      setDoc(doc(db, 'stats', `user-${user.uid}`), { mine: increment(n) }, { merge: true }),
+    ]);
+  } catch (error) {
+    console.warn('Score update error:', error);
+  }
 }
 
 // Ranking subscriptions
@@ -407,18 +444,24 @@ function subscribeRanking() {
   const key = getPeriodKeys()[period];
 
   import('https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js').then(({ collection, query, orderBy, limit, onSnapshot }) => {
-    unsubRanking = onSnapshot(query(collection(db, 'scores', key, 'countries'), orderBy('count', 'desc'), limit(10)), snap => {
-      const rankingList = document.getElementById('rankingList');
-      const rankingListMobile = document.getElementById('rankingListMobile');
-      
-      const html = snap.empty ? '<li>No data yet</li>' : 
-        Array.from(snap.docs).map((d, i) => 
-          `<li><span>${i + 1}. ${d.id}</span><strong>${d.data().count || 0}</strong></li>`
-        ).join('');
-      
-      if (rankingList) rankingList.innerHTML = html;
-      if (rankingListMobile) rankingListMobile.innerHTML = html;
-    });
+    unsubRanking = onSnapshot(
+      query(collection(db, 'scores', key, 'countries'), orderBy('count', 'desc'), limit(10)), 
+      snap => {
+        const rankingList = document.getElementById('rankingList');
+        const rankingListMobile = document.getElementById('rankingListMobile');
+        
+        const html = snap.empty ? '<li>No data yet</li>' : 
+          Array.from(snap.docs).map((d, i) => 
+            `<li><span>${i + 1}. ${d.id}</span><strong>${d.data().count || 0}</strong></li>`
+          ).join('');
+        
+        if (rankingList) rankingList.innerHTML = html;
+        if (rankingListMobile) rankingListMobile.innerHTML = html;
+      },
+      error => {
+        console.warn('Ranking subscription error:', error);
+      }
+    );
   });
 }
 
@@ -455,9 +498,10 @@ updateOnlineCount();
 // 6. クリックで描画
 // ----------------------------
 map.on('click', async (e) => {
-  if (inCd()) {
+  if (inCooldown()) {
     const left = Math.ceil((BRUSH_COOLDOWN[brushSize] * 1000 - (Date.now() - lastPaintAt)) / 1000);
     showCooldown(left);
+    toast(`Please wait ${left} seconds`);
     return;
   }
 
@@ -466,12 +510,20 @@ map.on('click', async (e) => {
   const baseLng = snap(e.latlng.lng);
 
   // Local immediate paint
+  const paintedTiles = [];
   for (let dy = 0; dy < brushSize; dy++) {
     for (let dx = 0; dx < brushSize; dx++) {
       const lat = baseLat + dy * TILE;
       const lng = baseLng + dx * TILE;
-      rectFor(lat, lng, color).addTo(layerTiles);
+      const rect = rectFor(lat, lng, color);
+      rect.addTo(layerTiles);
+      paintedTiles.push({ lat, lng });
     }
+  }
+
+  // Visual feedback
+  if (isMobile) {
+    navigator.vibrate && navigator.vibrate(50);
   }
 
   // Firebase save (signed in only)
@@ -479,20 +531,25 @@ map.on('click', async (e) => {
     try {
       const { doc, setDoc, serverTimestamp } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js');
       const ops = [];
-      for (let dy = 0; dy < brushSize; dy++) {
-        for (let dx = 0; dx < brushSize; dx++) {
-          const lat = baseLat + dy * TILE;
-          const lng = baseLng + dx * TILE;
-          const key = keyFromLatLng(lat, lng);
-          ops.push(setDoc(doc(db, 'tiles', key), {
-            key, lat, lng, color, country: currentCountry, uid: user.uid, ts: serverTimestamp()
-          }, { merge: true }));
-        }
+      
+      for (const tile of paintedTiles) {
+        const key = keyFromLatLng(tile.lat, tile.lng);
+        ops.push(setDoc(doc(db, 'tiles', key), {
+          key, 
+          lat: tile.lat, 
+          lng: tile.lng, 
+          color, 
+          country: currentCountry, 
+          uid: user.uid, 
+          ts: serverTimestamp()
+        }, { merge: true }));
       }
+      
       await Promise.all(ops);
       await updateScores(brushSize * brushSize);
     } catch (err) {
-      console.warn('Save skipped:', err);
+      console.warn('Save error:', err);
+      toast('Could not save to server');
     }
   }
 
@@ -562,7 +619,24 @@ if (sheetHandle && bottomSheet) {
 // ----------------------------
 // 8. Toast System
 // ----------------------------
+let toastQueue = [];
+let isShowingToast = false;
+
 function toast(msg) {
+  toastQueue.push(msg);
+  if (!isShowingToast) {
+    showNextToast();
+  }
+}
+
+function showNextToast() {
+  if (toastQueue.length === 0) {
+    isShowingToast = false;
+    return;
+  }
+  
+  isShowingToast = true;
+  const msg = toastQueue.shift();
   const container = document.getElementById('toastContainer');
   if (!container) return;
   
@@ -573,8 +647,11 @@ function toast(msg) {
   
   setTimeout(() => {
     toastEl.style.opacity = '0';
-    setTimeout(() => toastEl.remove(), 300);
-  }, 2400);
+    setTimeout(() => {
+      toastEl.remove();
+      showNextToast();
+    }, 300);
+  }, 2000);
 }
 
 // ----------------------------
@@ -584,13 +661,13 @@ function toast(msg) {
 // Debounce map moves on mobile
 let mapMoveTimeout;
 map.on('movestart', () => {
-  if (isMobile) {
+  if (isMobile && layerTiles) {
     layerTiles.setOpacity(0.5);
   }
 });
 
 map.on('moveend', () => {
-  if (isMobile) {
+  if (isMobile && layerTiles) {
     clearTimeout(mapMoveTimeout);
     mapMoveTimeout = setTimeout(() => {
       layerTiles.setOpacity(1);
@@ -607,29 +684,16 @@ window.addEventListener('resize', () => {
   }, 200);
 });
 
-// Remove double tap zoom prevention - allow normal mobile zoom
-// Performance optimizations
-let mapMoveTimeout;
-map.on('movestart', () => {
-  if (isMobile) {
-    layerTiles.setOpacity(0.5);
-  }
-});
-
-map.on('moveend', () => {
-  if (isMobile) {
-    clearTimeout(mapMoveTimeout);
-    mapMoveTimeout = setTimeout(() => {
-      layerTiles.setOpacity(1);
-    }, 100);
-  }
-});
-
 // Service Worker for PWA (optional)
-if ('serviceWorker' in navigator) {
+if ('serviceWorker' in navigator && window.location.protocol === 'https:') {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js').catch(err => 
-      console.log('Service Worker registration failed:', err)
+      console.log('Service Worker registration skipped')
     );
   });
 }
+
+// Debug info
+console.log('TePlace initialized successfully');
+console.log('Map center:', map.getCenter());
+console.log('Map zoom:', map.getZoom());
