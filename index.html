@@ -2,100 +2,200 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1, viewport-fit=cover"
-  />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no" />
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>TePlace — Real World Map Conquest</title>
-
-  <!-- Leaflet（先に読み込む：defer なし） -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
   <link rel="stylesheet" href="style.css" />
-
-  <!-- 100vhハック：実画面高さを --vh に反映 -->
-  <script>
-    (function applyVH(){
-      const set = () => {
-        const h = (window.visualViewport?.height || window.innerHeight) * 0.01;
-        document.documentElement.style.setProperty('--vh', h + 'px');
-      };
-      set();
-      window.addEventListener('resize', set, {passive:true});
-      window.visualViewport?.addEventListener?.('resize', set, {passive:true});
-      window.addEventListener('orientationchange', set, {passive:true});
-    })();
-  </script>
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 </head>
 <body>
-  <!-- 薄いヘッダー -->
-  <header class="floating-bar">
+  <header class="topbar">
     <div class="brand">🌍 TePlace</div>
-    <div class="spacer"></div>
-    <label class="country-pill">
-      <span class="label">Your country</span>
-      <select id="countrySelect" aria-label="Your country"></select>
-    </label>
-    <button id="signBtn" class="pill-btn" type="button">Sign in</button>
+    <div class="controls">
+      <label class="country-label">
+        <span class="country-label-text">Your country:</span>
+        <select id="countrySelect"></select>
+      </label>
+      <button id="signInBtn" class="btn">Sign in</button>
+      <button id="signOutBtn" class="btn hidden">Sign out</button>
+    </div>
   </header>
 
-  <!-- 上：情報パネル -->
-  <section class="info-panels panels-mobile-order">
-    <details open>
-      <summary>🏆 World Ranking</summary>
-      <ul id="rankingList" class="ranking-list">
-        <li>No data yet</li>
-      </ul>
-    </details>
+  <main class="main">
+    <section class="map-wrap">
+      <div id="map"></div>
+      <!-- Mobile floating controls -->
+      <div class="mobile-controls">
+        <div class="quick-color-picker">
+          <input id="mobileColorPicker" class="mobile-color-picker" type="color" value="#ff4b4b" />
+          <span class="brush-indicator">1×1</span>
+        </div>
+      </div>
+    </section>
 
-    <details open>
-      <summary>📊 Statistics</summary>
-      <div class="stats">
+    <aside class="side desktop-side">
+      <section class="card">
+        <div class="card-title">🏆 World Ranking</div>
+        <div class="seg">
+          <button class="seg-btn active" data-period="today">Today</button>
+          <button class="seg-btn" data-period="week">Week</button>
+          <button class="seg-btn" data-period="month">Month</button>
+        </div>
+        <ul id="rankingList" class="ranking">
+          <li>No data yet</li>
+        </ul>
+      </section>
+
+      <section class="card">
+        <div class="card-title">📊 Statistics</div>
         <div class="stat-row"><span>Total territories</span><strong id="statTotal">0</strong></div>
         <div class="stat-row"><span>My territories</span><strong id="statMine">0</strong></div>
         <div class="stat-row"><span>Online (approx)</span><strong id="statOnline">0</strong></div>
-      </div>
-    </details>
+      </section>
 
-    <details open>
-      <summary>🎨 Color & Tile size</summary>
-      <div class="controls-box">
-        <div class="row">
-          <span class="row-label">Color</span>
-          <input id="colorHex" class="mono" type="text" value="#ff4b4b" />
-          <label class="color-chip"><input id="colorPicker" type="color" value="#ff4b4b" /></label>
+      <section class="card">
+        <div class="card-title">🖌️ Brush & Color</div>
+        <div class="seg">
+          <button class="seg-btn active" data-brush="1">1×1</button>
+          <button class="seg-btn" data-brush="2">2×2</button>
+          <button class="seg-btn" data-brush="3">3×3</button>
+        </div>
+        <label class="color-row">
+          <span>Color</span>
+          <input id="colorHex" class="color-hex" value="#ff4b4b" maxlength="7" />
+          <input id="colorPicker" class="color-picker" type="color" value="#ff4b4b" />
+        </label>
+
+        <div class="sub-title">Tile size</div>
+        <div class="seg">
+          <button class="seg-btn" data-tile="0.005">0.005°</button>
+          <button class="seg-btn" data-tile="0.001">0.001°</button>
+          <button class="seg-btn active" data-tile="0.0005">0.0005°</button>
+        </div>
+        <div class="tile-custom">
+          <input id="tileCustom" type="number" step="0.0001" />
+          <button id="tileApply" class="btn">Apply</button>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-title">⏳ Cooldown</div>
+        <div id="cooldown" class="cooldown hidden">
+          <div id="cooldownFill" class="cooldown-fill"></div>
+        </div>
+        <div class="cooldown-text">Next: <span id="cooldownText">0s</span></div>
+        <p class="note">
+          1×1 = 10s · 2×2 = 40s · 3×3 = 90s cooldown<br>
+          Click the map to claim tiles.
+        </p>
+      </section>
+    </aside>
+
+    <!-- Mobile Bottom Sheet -->
+    <div class="mobile-bottom-sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-tabs">
+        <button class="sheet-tab active" data-tab="ranking">🏆 Ranking</button>
+        <button class="sheet-tab" data-tab="stats">📊 Stats</button>
+        <button class="sheet-tab" data-tab="brush">🖌️ Brush</button>
+        <button class="sheet-tab" data-tab="cooldown">⏳ Timer</button>
+      </div>
+      
+      <div class="sheet-content">
+        <div class="sheet-panel active" id="panel-ranking">
+          <div class="seg compact">
+            <button class="seg-btn active" data-period-mobile="today">Today</button>
+            <button class="seg-btn" data-period-mobile="week">Week</button>
+            <button class="seg-btn" data-period-mobile="month">Month</button>
+          </div>
+          <ul id="rankingListMobile" class="ranking mobile-ranking">
+            <li>No data yet</li>
+          </ul>
         </div>
 
-        <div class="row">
-          <span class="row-label">Tile</span>
-          <div class="seg">
-            <button class="seg-btn" data-tile="0.005" type="button">0.005°</button>
-            <button class="seg-btn" data-tile="0.001" type="button">0.001°</button>
-            <button class="seg-btn active" data-tile="0.0005" type="button">0.0005°</button>
+        <div class="sheet-panel" id="panel-stats">
+          <div class="stat-grid">
+            <div class="stat-card">
+              <div class="stat-value" id="statTotalMobile">0</div>
+              <div class="stat-label">Total territories</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value" id="statMineMobile">0</div>
+              <div class="stat-label">My territories</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value" id="statOnlineMobile">0</div>
+              <div class="stat-label">Online now</div>
+            </div>
           </div>
         </div>
 
-        <div class="row">
-          <input id="tileCustom" class="mono" type="number" step="0.0001" value="0.0005" />
-          <button id="tileApply" class="btn small" type="button">Apply</button>
+        <div class="sheet-panel" id="panel-brush">
+          <div class="brush-section">
+            <div class="sub-title">Brush Size</div>
+            <div class="seg">
+              <button class="seg-btn active" data-brush-mobile="1">1×1</button>
+              <button class="seg-btn" data-brush-mobile="2">2×2</button>
+              <button class="seg-btn" data-brush-mobile="3">3×3</button>
+            </div>
+          </div>
+          
+          <div class="color-section">
+            <div class="sub-title">Color</div>
+            <div class="color-presets">
+              <button class="color-preset" data-color="#ff4b4b" style="background:#ff4b4b"></button>
+              <button class="color-preset" data-color="#60a5fa" style="background:#60a5fa"></button>
+              <button class="color-preset" data-color="#22c55e" style="background:#22c55e"></button>
+              <button class="color-preset" data-color="#f59e0b" style="background:#f59e0b"></button>
+              <button class="color-preset" data-color="#a855f7" style="background:#a855f7"></button>
+              <button class="color-preset" data-color="#ec4899" style="background:#ec4899"></button>
+              <button class="color-preset" data-color="#14b8a6" style="background:#14b8a6"></button>
+              <button class="color-preset" data-color="#6366f1" style="background:#6366f1"></button>
+            </div>
+            <label class="color-row mobile">
+              <input id="colorHexMobile" class="color-hex" value="#ff4b4b" maxlength="7" />
+              <input id="colorPickerMobile" class="color-picker" type="color" value="#ff4b4b" />
+            </label>
+          </div>
+
+          <div class="tile-section">
+            <div class="sub-title">Tile Size</div>
+            <div class="seg">
+              <button class="seg-btn" data-tile-mobile="0.005">Large</button>
+              <button class="seg-btn" data-tile-mobile="0.001">Medium</button>
+              <button class="seg-btn active" data-tile-mobile="0.0005">Small</button>
+            </div>
+          </div>
         </div>
-        <small class="note">1×1 only ・ Cooldown: <b>10s</b></small>
+
+        <div class="sheet-panel" id="panel-cooldown">
+          <div class="cooldown-display">
+            <div id="cooldownMobile" class="cooldown mobile-cooldown hidden">
+              <div id="cooldownFillMobile" class="cooldown-fill"></div>
+            </div>
+            <div class="cooldown-info">
+              <div class="cooldown-time" id="cooldownTextMobile">Ready!</div>
+              <div class="cooldown-details">
+                <span>1×1 = 10s</span>
+                <span>2×2 = 40s</span>
+                <span>3×3 = 90s</span>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
-    </details>
-  </section>
-
-  <!-- 下：地図（スマホでは常に下で表示） -->
-  <main id="mapWrap" class="map-stick-bottom">
-    <div id="map" role="region" aria-label="World map"></div>
-
-    <!-- クールダウン -->
-    <div id="cooldown" class="cooldown hidden" aria-live="polite">
-      <div id="cooldownFill" class="bar"></div>
-      <span id="cooldownText">0s</span>
     </div>
   </main>
 
-  <script src="script.js"></script>
+  <!-- Toast Container -->
+  <div id="toastContainer" class="toast-container"></div>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <!-- App -->
+  <script src="script.js" type="module"></script>
 </body>
 </html>
