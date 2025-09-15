@@ -607,17 +607,23 @@ window.addEventListener('resize', () => {
   }, 200);
 });
 
-// Prevent double tap zoom on mobile
-if (isMobile) {
-  let lastTouchEnd = 0;
-  document.addEventListener('touchend', (e) => {
-    const now = Date.now();
-    if (now - lastTouchEnd <= 300) {
-      e.preventDefault();
-    }
-    lastTouchEnd = now;
-  }, false);
-}
+// Remove double tap zoom prevention - allow normal mobile zoom
+// Performance optimizations
+let mapMoveTimeout;
+map.on('movestart', () => {
+  if (isMobile) {
+    layerTiles.setOpacity(0.5);
+  }
+});
+
+map.on('moveend', () => {
+  if (isMobile) {
+    clearTimeout(mapMoveTimeout);
+    mapMoveTimeout = setTimeout(() => {
+      layerTiles.setOpacity(1);
+    }, 100);
+  }
+});
 
 // Service Worker for PWA (optional)
 if ('serviceWorker' in navigator) {

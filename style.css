@@ -158,6 +158,17 @@ body{
   to{transform:translateY(0);opacity:1}
 }
 
+/* About link */
+.about-link{
+  display:block;color:var(--brand);text-decoration:none;
+  padding:8px 0;transition:color 0.2s;
+}
+.about-link:hover{color:var(--accent)}
+.about-link-mobile{
+  display:inline-block;margin-top:12px;color:var(--brand);
+  text-decoration:none;font-size:14px;
+}
+
 /* Mobile Styles */
 @media (max-width: 768px){
   body{overflow:hidden}
@@ -165,7 +176,7 @@ body{
   .topbar{
     padding:8px 12px;height:50px;
   }
-  .brand{font-size:16px}
+  .brand-title{font-size:16px}
   .country-label-text{display:none}
   .country-label select{padding:5px 24px 5px 8px;font-size:13px}
   .btn{padding:5px 10px;font-size:13px}

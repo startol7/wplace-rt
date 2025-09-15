@@ -2,42 +2,193 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>About TePlace — Real World Map Conquest Game</title>
-  <meta name="description" content="Learn about TePlace, a free online world map conquest game inspired by r/place and WPlace. Paint tiles, capture territories, and climb Today/Week/Month/All-time rankings.">
-  <link rel="canonical" href="https://YOUR-DOMAIN.com/about.html">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>How to Play TePlace - Game Guide & Rules | World Map Conquest Game</title>
+  <meta name="description" content="Learn how to play TePlace, the multiplayer map conquest game. Complete guide with rules, strategies, tips, and FAQs. Start painting territories and climb the rankings!">
+  <meta name="keywords" content="teplace guide, how to play teplace, map game tutorial, territory game rules, conquest game strategy">
+  <link rel="canonical" href="https://teplace.onrender.com/about.html">
+  
+  <!-- Open Graph -->
+  <meta property="og:title" content="How to Play TePlace - Complete Game Guide">
+  <meta property="og:description" content="Master TePlace with our comprehensive guide. Learn strategies, rules, and tips to dominate the world map.">
+  <meta property="og:url" content="https://teplace.onrender.com/about.html">
+  <meta property="og:type" content="article">
+  
   <link rel="stylesheet" href="./style.css" />
+  <style>
+    .about-container{max-width:800px;margin:0 auto;padding:20px}
+    .guide-section{margin:30px 0;padding:20px;background:var(--panel);border-radius:14px;border:1px solid var(--line)}
+    .guide-section h2{color:var(--brand);margin-bottom:15px}
+    .guide-section h3{color:var(--accent);margin:20px 0 10px}
+    .feature-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:20px;margin:20px 0}
+    .feature-card{padding:15px;background:var(--btn);border-radius:10px;border:1px solid var(--line)}
+    .feature-card h4{color:var(--brand);margin-bottom:8px}
+    .faq-item{margin:15px 0;padding:15px;background:var(--btn);border-radius:10px}
+    .faq-item h4{color:var(--brand);margin-bottom:8px}
+    .back-link{display:inline-block;margin:20px 0;padding:10px 20px;background:var(--brand);color:white;text-decoration:none;border-radius:8px;transition:transform 0.2s}
+    .back-link:hover{transform:translateY(-2px)}
+    .social-links{display:flex;gap:15px;margin:20px 0}
+    .social-link{padding:8px 16px;background:var(--btn);color:var(--text);text-decoration:none;border-radius:8px;border:1px solid var(--line);transition:all 0.2s}
+    .social-link:hover{background:var(--btn-active);transform:translateY(-1px)}
+  </style>
 </head>
 <body>
-  <header class="header">
-    <h1>About TePlace</h1>
-    <nav><a href="./">← Back to game</a></nav>
-  </header>
+  <div class="about-container">
+    <header>
+      <h1>TePlace - World Map Conquest Game</h1>
+      <nav>
+        <a href="./" class="back-link">← Back to Game</a>
+      </nav>
+    </header>
 
-  <main class="main-container" style="flex-direction:column;padding:20px;gap:12px;">
-    <section>
-      <h2>What is TePlace?</h2>
-      <p><strong>TePlace</strong> is an online world map game where players paint tiny tiles on the real map and capture territories for their country. It features <em>Today</em>, <em>Week</em>, <em>Month</em>, and <em>All-time</em> leaderboards persisted on your device.</p>
-      <p>Inspired by community projects like <em>r/place</em> and <em>WPlace</em>, TePlace focuses on geography, rankings, and colorful creativity.</p>
-    </section>
+    <main>
+      <section class="guide-section">
+        <h2>🎮 What is TePlace?</h2>
+        <p><strong>TePlace</strong> is a free multiplayer browser game where players paint territories on a real world map and compete for global domination. Inspired by Reddit's r/place and similar collaborative pixel art projects, TePlace brings the concept to geographic conquest.</p>
+        
+        <div class="feature-grid">
+          <div class="feature-card">
+            <h4>🌍 Real World Map</h4>
+            <p>Paint on actual map tiles using OpenStreetMap data</p>
+          </div>
+          <div class="feature-card">
+            <h4>🏆 Global Rankings</h4>
+            <p>Compete in daily, weekly, and monthly leaderboards</p>
+          </div>
+          <div class="feature-card">
+            <h4>🎨 Custom Colors</h4>
+            <p>Choose any color to represent your nation</p>
+          </div>
+          <div class="feature-card">
+            <h4>⚡ Real-time Updates</h4>
+            <p>See other players' moves instantly</p>
+          </div>
+        </div>
+      </section>
 
-    <section>
-      <h2>How to Play</h2>
-      <ol>
-        <li>Select your country from the header.</li>
-        <li>Choose a color (updates instantly) and click the map to paint.</li>
-        <li>Capture enemy tiles and climb the leaderboards.</li>
-      </ol>
-    </section>
+      <section class="guide-section">
+        <h2>📖 How to Play</h2>
+        
+        <h3>Getting Started</h3>
+        <ol>
+          <li><strong>Choose Your Country:</strong> Select your nation from the dropdown menu</li>
+          <li><strong>Pick a Color:</strong> Choose your territory color (each country can use any color)</li>
+          <li><strong>Start Painting:</strong> Click anywhere on the map to claim territories</li>
+          <li><strong>Watch Your Ranking:</strong> Track your progress on the leaderboards</li>
+        </ol>
 
-    <section>
-      <h2>Notes</h2>
-      <p>Online users count is a demo number. To count real presence, you’ll need a realtime backend (WebSocket, etc.).</p>
-    </section>
+        <h3>Game Mechanics</h3>
+        <ul>
+          <li><strong>Tile Size:</strong> Each tile is 0.0005° (approximately 50m x 50m at the equator)</li>
+          <li><strong>Brush Sizes:</strong> Paint 1×1, 2×2, or 3×3 tile areas</li>
+          <li><strong>Cooldowns:</strong> 10s for 1×1, 40s for 2×2, 90s for 3×3</li>
+          <li><strong>Territory Capture:</strong> Paint over enemy tiles to capture them</li>
+        </ul>
 
-    <section>
-      <h2>Credits</h2>
-      <p>Built with Leaflet and map tiles by OpenStreetMap contributors (with fallback providers like CARTO and Stamen).</p>
-    </section>
-  </main>
+        <h3>Strategy Tips</h3>
+        <ul>
+          <li>🎯 <strong>Focus on clusters:</strong> Build connected territories for better defense</li>
+          <li>⏰ <strong>Time your attacks:</strong> Coordinate with teammates during active hours</li>
+          <li>🗺️ <strong>Choose strategic locations:</strong> Cities and landmarks are high-value targets</li>
+          <li>🎨 <strong>Use distinctive colors:</strong> Make your territories easily recognizable</li>
+        </ul>
+      </section>
+
+      <section class="guide-section">
+        <h2>❓ Frequently Asked Questions</h2>
+        
+        <div class="faq-item">
+          <h4>Is TePlace free to play?</h4>
+          <p>Yes! TePlace is completely free with no hidden costs or pay-to-win mechanics.</p>
+        </div>
+        
+        <div class="faq-item">
+          <h4>Do I need to create an account?</h4>
+          <p>You can play as a guest, but signing in (anonymously) saves your progress and territories.</p>
+        </div>
+        
+        <div class="faq-item">
+          <h4>Can I play on mobile?</h4>
+          <p>Yes! TePlace is fully optimized for mobile browsers with touch controls.</p>
+        </div>
+        
+        <div class="faq-item">
+          <h4>How are rankings calculated?</h4>
+          <p>Rankings are based on the total number of territories your country controls.</p>
+        </div>
+        
+        <div class="faq-item">
+          <h4>Can I form alliances?</h4>
+          <p>While there's no formal alliance system, players often coordinate strategies!</p>
+        </div>
+      </section>
+
+      <section class="guide-section">
+        <h2>🔗 Connect & Share</h2>
+        <p>Join our community and stay updated with the latest features:</p>
+        <div class="social-links">
+          <a href="https://twitter.com/teplacegame" class="social-link" target="_blank" rel="noopener">Twitter</a>
+          <a href="https://discord.gg/teplace" class="social-link" target="_blank" rel="noopener">Discord</a>
+          <a href="https://reddit.com/r/teplace" class="social-link" target="_blank" rel="noopener">Reddit</a>
+          <a href="https://github.com/yourusername/teplace" class="social-link" target="_blank" rel="noopener">GitHub</a>
+        </div>
+      </section>
+
+      <section class="guide-section">
+        <h2>🚀 Upcoming Features</h2>
+        <ul>
+          <li>🏰 Special territories with bonus points</li>
+          <li>🎖️ Achievement system and badges</li>
+          <li>💬 In-game chat and coordination</li>
+          <li>🌟 Daily challenges and events</li>
+          <li>📊 Detailed statistics and heatmaps</li>
+        </ul>
+      </section>
+
+      <section class="guide-section">
+        <h2>💝 Credits</h2>
+        <p>TePlace is built with love using:</p>
+        <ul>
+          <li>🗺️ <strong>Leaflet.js</strong> for interactive maps</li>
+          <li>🌍 <strong>OpenStreetMap</strong> for map data</li>
+          <li>🔥 <strong>Firebase</strong> for real-time synchronization</li>
+          <li>💙 Inspired by Reddit's r/place and the pixel art community</li>
+        </ul>
+      </section>
+    </main>
+
+    <footer style="text-align:center;padding:40px 0;color:var(--muted)">
+      <p>© 2024 TePlace. Play now at <a href="https://teplace.onrender.com" style="color:var(--brand)">teplace.onrender.com</a></p>
+      <nav style="margin-top:20px">
+        <a href="./" class="back-link">Play TePlace Now!</a>
+      </nav>
+    </footer>
+  </div>
+
+  <!-- Structured Data -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "Is TePlace free to play?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes! TePlace is completely free with no hidden costs or pay-to-win mechanics."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Can I play TePlace on mobile?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Yes! TePlace is fully optimized for mobile browsers with touch controls."
+        }
+      }
+    ]
+  }
+  </script>
 </body>
 </html>

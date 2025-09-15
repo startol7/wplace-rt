@@ -2,35 +2,86 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=5" />
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <title>TePlace — Real World Map Conquest</title>
+  
+  <!-- SEO Meta Tags -->
+  <title>TePlace - Real World Map Conquest Game | Paint Territories Online</title>
+  <meta name="description" content="TePlace is a free multiplayer map conquest game. Paint territories on the real world map, compete with players globally, climb rankings. Inspired by r/place. Play now!">
+  <meta name="keywords" content="teplace, map game, territory game, conquest game, multiplayer game, online game, r/place game, world map game, paint territories, browser game">
+  <meta name="author" content="TePlace Team">
+  <meta name="robots" content="index, follow">
+  
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://teplace.onrender.com/">
+  <meta property="og:title" content="TePlace - Real World Map Conquest Game">
+  <meta property="og:description" content="Paint territories on the real world map and compete with players globally in this multiplayer conquest game.">
+  <meta property="og:image" content="https://teplace.onrender.com/og-image.png">
+  
+  <!-- Twitter -->
+  <meta property="twitter:card" content="summary_large_image">
+  <meta property="twitter:url" content="https://teplace.onrender.com/">
+  <meta property="twitter:title" content="TePlace - Real World Map Conquest Game">
+  <meta property="twitter:description" content="Paint territories on the real world map and compete with players globally.">
+  <meta property="twitter:image" content="https://teplace.onrender.com/og-image.png">
+  
+  <!-- Canonical URL -->
+  <link rel="canonical" href="https://teplace.onrender.com/">
+  
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" sizes="32x32" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAACXBIWXMAAA7EAAAOxAGVKw4bAAADH0lEQVRYhbWXS2gTURSGv5nJpElMTWtttVqtVkVBEcGFLnThRl24EHHhwoULQVy4cCEiuHDhQkRw4cKFiODChQsRwYULFy5EBBcuXLiwoNVqa2ub5jWT3HthJpkkk2Qyk/6QkDn3nPPPueeee88VhBCCMlq9ejWtra0sXLiQlpYWmpqaaGxsRJZlDMNgbGyMwcFBBgYG6Onpobe3l56eHiYnJ8stVZ4AuVxODA8Pi46ODrFlyxbR1NQkgLJpaWkR27ZtE52dnWJoaEjkcjm/3PwJmJycFMePHxfz5s3znbzULFiwQJw8eVJMTEyUSyy+gFQqJY4ePSrq6+urEl5oGhsbxbFjx0QqlSqVWJyAbDYrTp8+LWRZrlnyQqPRaIjTp0+LbDb7W0aMUQLOnDkjIpFIzcUXmtmzZ4tz584VE2EXkEwmxf79+4Mj3kJXV5dIJpNOETYBuq6LXbt2BU+8ha1bt4psNmsXYQpIp9Ni586dNSPeMAxxaWtCtMZzlZ/ZtWuXSKfThggLg6IoYtu2bVVN/vtHSmx9PCL2PBsVh1+MiUMvxsTe56Ni65MRseHBsPg5o/vO19zcLDo6OoSiKObte+jQodDEf53Jij3PRkXsyE+ROPVLLDvzS8SO/BS7n46K8Wndd94DBw4YZnQYXV1dVRH/dUYXm5vayxMfk8TmRyPCSKhsAd3d3aYJT5w4EViEoRli25MRXxMasSPCCFdFAcePHzcFnD9/vsJJnRroT4vEyfxk2xL5iQ8++1n2/Z4/P8Xpt7/EsjO/xP5+oRRLwGQnT56UBEEQ7t+/X/GkheruT4vEqV+itdQksbyo8E0VkwshhKGqquHO2L9/v0kmLS0todYppl+/fiGEEJIoZdkdPHgwNPEWVCoVy6A8P9FqR1VVUQQhqtVqX79+hRY/MzPDx48fAZBlmXg8TktLCy0tLcyaNSvUegDJZBIAmAUTExOhTWiaplgshoaGBpqbm0MvU0wTExMAzBJCCMViMUKh0F8TH4vFEEIIGWDlypWBDPizWrVqFQDR/wH+AdWQXI9OT8yNAAAAAElFTkSuQmCC">
+  
+  <!-- Structured Data -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "TePlace",
+    "description": "Real world map conquest game where players paint territories and compete globally",
+    "url": "https://teplace.onrender.com/",
+    "applicationCategory": "GameApplication",
+    "genre": "Strategy",
+    "browserRequirements": "Requires JavaScript. Works on modern browsers.",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD"
+    }
+  }
+  </script>
+  
   <link rel="stylesheet" href="style.css" />
   <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <!-- Preconnect for performance -->
+  <link rel="preconnect" href="https://tile.openstreetmap.org">
+  <link rel="preconnect" href="https://www.gstatic.com">
 </head>
 <body>
   <header class="topbar">
-    <div class="brand">🌍 TePlace</div>
+    <div class="brand">
+      <h1 class="brand-title">🌍 TePlace</h1>
+    </div>
     <div class="controls">
       <label class="country-label">
-        <span class="country-label-text">Your country:</span>
-        <select id="countrySelect"></select>
+        <span class="country-label-text">Country:</span>
+        <select id="countrySelect" aria-label="Select your country"></select>
       </label>
-      <button id="signInBtn" class="btn">Sign in</button>
-      <button id="signOutBtn" class="btn hidden">Sign out</button>
+      <button id="signInBtn" class="btn" aria-label="Sign in to save progress">Sign in</button>
+      <button id="signOutBtn" class="btn hidden" aria-label="Sign out">Sign out</button>
     </div>
   </header>
 
   <main class="main">
     <section class="map-wrap">
-      <div id="map"></div>
+      <div id="map" role="application" aria-label="Interactive world map for painting territories"></div>
       <!-- Mobile floating controls -->
       <div class="mobile-controls">
         <div class="quick-color-picker">
-          <input id="mobileColorPicker" class="mobile-color-picker" type="color" value="#ff4b4b" />
+          <input id="mobileColorPicker" class="mobile-color-picker" type="color" value="#ff4b4b" aria-label="Choose color" />
           <span class="brush-indicator">1×1</span>
         </div>
       </div>
@@ -38,85 +89,79 @@
 
     <aside class="side desktop-side">
       <section class="card">
-        <div class="card-title">🏆 World Ranking</div>
-        <div class="seg">
-          <button class="seg-btn active" data-period="today">Today</button>
-          <button class="seg-btn" data-period="week">Week</button>
-          <button class="seg-btn" data-period="month">Month</button>
+        <h2 class="card-title">🏆 World Ranking</h2>
+        <div class="seg" role="tablist">
+          <button class="seg-btn active" data-period="today" role="tab" aria-selected="true">Today</button>
+          <button class="seg-btn" data-period="week" role="tab" aria-selected="false">Week</button>
+          <button class="seg-btn" data-period="month" role="tab" aria-selected="false">Month</button>
         </div>
-        <ul id="rankingList" class="ranking">
-          <li>No data yet</li>
+        <ul id="rankingList" class="ranking" role="tabpanel">
+          <li>Loading rankings...</li>
         </ul>
       </section>
 
       <section class="card">
-        <div class="card-title">📊 Statistics</div>
+        <h2 class="card-title">📊 Statistics</h2>
         <div class="stat-row"><span>Total territories</span><strong id="statTotal">0</strong></div>
         <div class="stat-row"><span>My territories</span><strong id="statMine">0</strong></div>
-        <div class="stat-row"><span>Online (approx)</span><strong id="statOnline">0</strong></div>
+        <div class="stat-row"><span>Online players</span><strong id="statOnline">0</strong></div>
       </section>
 
       <section class="card">
-        <div class="card-title">🖌️ Brush & Color</div>
-        <div class="seg">
+        <h2 class="card-title">🖌️ Brush Settings</h2>
+        <div class="seg" role="group" aria-label="Brush size">
           <button class="seg-btn active" data-brush="1">1×1</button>
           <button class="seg-btn" data-brush="2">2×2</button>
           <button class="seg-btn" data-brush="3">3×3</button>
         </div>
         <label class="color-row">
           <span>Color</span>
-          <input id="colorHex" class="color-hex" value="#ff4b4b" maxlength="7" />
-          <input id="colorPicker" class="color-picker" type="color" value="#ff4b4b" />
+          <input id="colorHex" class="color-hex" value="#ff4b4b" maxlength="7" aria-label="Color hex code" />
+          <input id="colorPicker" class="color-picker" type="color" value="#ff4b4b" aria-label="Color picker" />
         </label>
-
-        <div class="sub-title">Tile size</div>
-        <div class="seg">
-          <button class="seg-btn" data-tile="0.005">0.005°</button>
-          <button class="seg-btn" data-tile="0.001">0.001°</button>
-          <button class="seg-btn active" data-tile="0.0005">0.0005°</button>
-        </div>
-        <div class="tile-custom">
-          <input id="tileCustom" type="number" step="0.0001" />
-          <button id="tileApply" class="btn">Apply</button>
-        </div>
       </section>
 
       <section class="card">
-        <div class="card-title">⏳ Cooldown</div>
-        <div id="cooldown" class="cooldown hidden">
+        <h2 class="card-title">⏳ Cooldown Timer</h2>
+        <div id="cooldown" class="cooldown hidden" role="progressbar" aria-valuemin="0" aria-valuemax="100">
           <div id="cooldownFill" class="cooldown-fill"></div>
         </div>
-        <div class="cooldown-text">Next: <span id="cooldownText">0s</span></div>
+        <div class="cooldown-text">Next: <span id="cooldownText">Ready</span></div>
         <p class="note">
-          1×1 = 10s · 2×2 = 40s · 3×3 = 90s cooldown<br>
-          Click the map to claim tiles.
+          Cooldown: 1×1 = 10s · 2×2 = 40s · 3×3 = 90s<br>
+          Click the map to paint territories!
         </p>
       </section>
+
+      <nav class="card">
+        <a href="about.html" class="about-link">About TePlace →</a>
+        <a href="https://github.com/yourusername/teplace" class="about-link" target="_blank" rel="noopener">GitHub →</a>
+      </nav>
     </aside>
 
     <!-- Mobile Bottom Sheet -->
-    <div class="mobile-bottom-sheet">
-      <div class="sheet-handle"></div>
-      <div class="sheet-tabs">
-        <button class="sheet-tab active" data-tab="ranking">🏆 Ranking</button>
-        <button class="sheet-tab" data-tab="stats">📊 Stats</button>
-        <button class="sheet-tab" data-tab="brush">🖌️ Brush</button>
-        <button class="sheet-tab" data-tab="cooldown">⏳ Timer</button>
-      </div>
+    <div class="mobile-bottom-sheet" role="complementary">
+      <div class="sheet-handle" aria-label="Drag to expand panel"></div>
+      <nav class="sheet-tabs" role="tablist">
+        <button class="sheet-tab active" data-tab="ranking" role="tab" aria-selected="true">🏆 Ranking</button>
+        <button class="sheet-tab" data-tab="stats" role="tab" aria-selected="false">📊 Stats</button>
+        <button class="sheet-tab" data-tab="brush" role="tab" aria-selected="false">🖌️ Brush</button>
+        <button class="sheet-tab" data-tab="cooldown" role="tab" aria-selected="false">⏳ Timer</button>
+      </nav>
       
       <div class="sheet-content">
-        <div class="sheet-panel active" id="panel-ranking">
+        <div class="sheet-panel active" id="panel-ranking" role="tabpanel">
           <div class="seg compact">
             <button class="seg-btn active" data-period-mobile="today">Today</button>
             <button class="seg-btn" data-period-mobile="week">Week</button>
             <button class="seg-btn" data-period-mobile="month">Month</button>
           </div>
           <ul id="rankingListMobile" class="ranking mobile-ranking">
-            <li>No data yet</li>
+            <li>Loading rankings...</li>
           </ul>
         </div>
 
-        <div class="sheet-panel" id="panel-stats">
+        <div class="sheet-panel" id="panel-stats" role="tabpanel">
           <div class="stat-grid">
             <div class="stat-card">
               <div class="stat-value" id="statTotalMobile">0</div>
@@ -133,9 +178,9 @@
           </div>
         </div>
 
-        <div class="sheet-panel" id="panel-brush">
+        <div class="sheet-panel" id="panel-brush" role="tabpanel">
           <div class="brush-section">
-            <div class="sub-title">Brush Size</div>
+            <h3 class="sub-title">Brush Size</h3>
             <div class="seg">
               <button class="seg-btn active" data-brush-mobile="1">1×1</button>
               <button class="seg-btn" data-brush-mobile="2">2×2</button>
@@ -144,34 +189,25 @@
           </div>
           
           <div class="color-section">
-            <div class="sub-title">Color</div>
+            <h3 class="sub-title">Quick Colors</h3>
             <div class="color-presets">
-              <button class="color-preset" data-color="#ff4b4b" style="background:#ff4b4b"></button>
-              <button class="color-preset" data-color="#60a5fa" style="background:#60a5fa"></button>
-              <button class="color-preset" data-color="#22c55e" style="background:#22c55e"></button>
-              <button class="color-preset" data-color="#f59e0b" style="background:#f59e0b"></button>
-              <button class="color-preset" data-color="#a855f7" style="background:#a855f7"></button>
-              <button class="color-preset" data-color="#ec4899" style="background:#ec4899"></button>
-              <button class="color-preset" data-color="#14b8a6" style="background:#14b8a6"></button>
-              <button class="color-preset" data-color="#6366f1" style="background:#6366f1"></button>
+              <button class="color-preset" data-color="#ff4b4b" style="background:#ff4b4b" aria-label="Red"></button>
+              <button class="color-preset" data-color="#60a5fa" style="background:#60a5fa" aria-label="Blue"></button>
+              <button class="color-preset" data-color="#22c55e" style="background:#22c55e" aria-label="Green"></button>
+              <button class="color-preset" data-color="#f59e0b" style="background:#f59e0b" aria-label="Orange"></button>
+              <button class="color-preset" data-color="#a855f7" style="background:#a855f7" aria-label="Purple"></button>
+              <button class="color-preset" data-color="#ec4899" style="background:#ec4899" aria-label="Pink"></button>
+              <button class="color-preset" data-color="#14b8a6" style="background:#14b8a6" aria-label="Teal"></button>
+              <button class="color-preset" data-color="#6366f1" style="background:#6366f1" aria-label="Indigo"></button>
             </div>
             <label class="color-row mobile">
-              <input id="colorHexMobile" class="color-hex" value="#ff4b4b" maxlength="7" />
-              <input id="colorPickerMobile" class="color-picker" type="color" value="#ff4b4b" />
+              <input id="colorHexMobile" class="color-hex" value="#ff4b4b" maxlength="7" aria-label="Color hex code" />
+              <input id="colorPickerMobile" class="color-picker" type="color" value="#ff4b4b" aria-label="Color picker" />
             </label>
-          </div>
-
-          <div class="tile-section">
-            <div class="sub-title">Tile Size</div>
-            <div class="seg">
-              <button class="seg-btn" data-tile-mobile="0.005">Large</button>
-              <button class="seg-btn" data-tile-mobile="0.001">Medium</button>
-              <button class="seg-btn active" data-tile-mobile="0.0005">Small</button>
-            </div>
           </div>
         </div>
 
-        <div class="sheet-panel" id="panel-cooldown">
+        <div class="sheet-panel" id="panel-cooldown" role="tabpanel">
           <div class="cooldown-display">
             <div id="cooldownMobile" class="cooldown mobile-cooldown hidden">
               <div id="cooldownFillMobile" class="cooldown-fill"></div>
@@ -185,13 +221,14 @@
               </div>
             </div>
           </div>
+          <a href="about.html" class="about-link-mobile">Learn how to play →</a>
         </div>
       </div>
     </div>
   </main>
 
   <!-- Toast Container -->
-  <div id="toastContainer" class="toast-container"></div>
+  <div id="toastContainer" class="toast-container" role="alert" aria-live="polite"></div>
 
   <!-- Leaflet JS -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
