@@ -45,9 +45,7 @@ const state = {
   currentColor: localStorage.getItem('selectedColor') || CONFIG.DEFAULT_COLOR,
   lastPaintAt: 0,
   cooldownTimer: null,
-  auth: null,
   db: null,
-  user: null,
   firebaseReady: false,
   unsubscriptions: [],
   isMobile: window.innerWidth <= 768,
@@ -233,7 +231,7 @@ const gameLogic = {
     }
     
     // Save to Firebase
-    if (state.firebaseReady && state.user) {
+    if (state.firebaseReady) {
       firebase.saveTile(lat, lng, color);
     }
     
@@ -331,18 +329,6 @@ const ui = {
         firebase.subscribeToRanking();
       });
     });
-    
-    // Sign in/out buttons
-    const signInBtn = document.getElementById('signInBtn');
-    const signOutBtn = document.getElementById('signOutBtn');
-    
-    if (signInBtn) {
-      signInBtn.addEventListener('click', () => firebase.signIn());
-    }
-    
-    if (signOutBtn) {
-      signOutBtn.addEventListener('click', () => firebase.signOut());
-    }
     
     // Window resize
     window.addEventListener('resize', utils.debounce(() => {
@@ -471,35 +457,22 @@ const firebase = {
     if (state.firebaseReady) return true;
     
     try {
-      const [appModule, authModule, firestoreModule] = await Promise.all([
+      const [appModule, firestoreModule] = await Promise.all([
         import('https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js'),
-        import('https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js'),
         import('https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js')
       ]);
       
       const app = appModule.initializeApp(CONFIG.FIREBASE);
-      state.auth = authModule.getAuth(app);
       state.db = firestoreModule.getFirestore(app);
-      
-      await authModule.setPersistence(state.auth, authModule.browserLocalPersistence);
-      
-      // Auth state listener
-      authModule.onAuthStateChanged(state.auth, (user) => {
-        state.user = user;
-        this.updateAuthUI();
-        if (user) {
-          ui.showToast('Connected', 'success');
-          this.subscribeToData();
-        }
-      });
-      
-      // Auto sign in
-      await this.signIn(true);
       
       // Subscribe to tiles
       this.subscribeToTiles();
       
+      // Subscribe to data
+      this.subscribeToData();
+      
       state.firebaseReady = true;
+      ui.showToast('Connected', 'success');
       return true;
     } catch (error) {
       console.warn('Firebase init failed:', error);
@@ -508,43 +481,15 @@ const firebase = {
     }
   },
   
-  async signIn(silent = false) {
-    try {
-      if (!state.firebaseReady) await this.init();
-      const { signInAnonymously } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js');
-      await signInAnonymously(state.auth);
-    } catch (error) {
-      if (!silent) ui.showToast('Sign in failed', 'error');
-    }
-  },
-  
-  async signOut() {
-    try {
-      if (!state.firebaseReady) return;
-      const { signOut } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js');
-      await signOut(state.auth);
-      ui.showToast('Signed out', 'info');
-    } catch (error) {
-      ui.showToast('Sign out failed', 'error');
-    }
-  },
-  
-  updateAuthUI() {
-    const signInBtn = document.getElementById('signInBtn');
-    const signOutBtn = document.getElementById('signOutBtn');
-    
-    if (signInBtn) signInBtn.classList.toggle('hidden', !!state.user);
-    if (signOutBtn) signOutBtn.classList.toggle('hidden', !state.user);
-  },
-  
   async saveTile(lat, lng, color) {
-    if (!state.firebaseReady || !state.user) return;
+    if (!state.firebaseReady) return;
     
     try {
       const { doc, setDoc, serverTimestamp, increment } = 
         await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js');
       
       const key = utils.getTileKey(lat, lng);
+      const sessionId = this.getSessionId();
       
       // Save tile
       await setDoc(doc(state.db, 'tiles', key), {
@@ -553,19 +498,29 @@ const firebase = {
         lng: utils.snap(lng),
         color,
         country: state.currentCountry,
-        uid: state.user.uid,
+        sessionId,
         ts: serverTimestamp()
       }, { merge: true });
       
-      // Update scores
+      // Update scores and session count
       this.updateScores(1);
+      
+      // Increment session counter
+      const currentTiles = parseInt(sessionStorage.getItem('sessionTiles') || '0');
+      sessionStorage.setItem('sessionTiles', String(currentTiles + 1));
+      
+      // Update UI immediately
+      ['statMine', 'statMineMobile'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = utils.formatNumber(currentTiles + 1);
+      });
     } catch (error) {
       console.warn('Save failed:', error);
     }
   },
   
   async updateScores(count) {
-    if (!state.firebaseReady || !state.user) return;
+    if (!state.firebaseReady) return;
     
     try {
       const { doc, setDoc, increment } = 
@@ -583,17 +538,29 @@ const firebase = {
         }, { merge: true }));
       });
       
-      // Update user stats
-      const userRef = doc(state.db, 'stats', `user-${state.user.uid}`);
-      updates.push(setDoc(userRef, { 
-        mine: increment(count),
-        lastCountry: state.currentCountry
+      // Update session stats
+      const sessionId = this.getSessionId();
+      const sessionRef = doc(state.db, 'sessions', sessionId);
+      updates.push(setDoc(sessionRef, { 
+        tiles: increment(count),
+        country: state.currentCountry,
+        lastActive: new Date().toISOString()
       }, { merge: true }));
       
       await Promise.all(updates);
     } catch (error) {
       console.warn('Score update failed:', error);
     }
+  },
+  
+  getSessionId() {
+    // Get or create a session ID for this browser session
+    let sessionId = sessionStorage.getItem('sessionId');
+    if (!sessionId) {
+      sessionId = `session-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      sessionStorage.setItem('sessionId', sessionId);
+    }
+    return sessionId;
   },
   
   getPeriodKeys() {
@@ -673,21 +640,15 @@ const firebase = {
     state.unsubscriptions.ranking = unsub;
   },
   
-  async subscribeToUserStats() {
-    if (!state.firebaseReady || !state.user) return;
+  subscribeToUserStats() {
+    // セッションベースの統計を表示
+    const sessionId = this.getSessionId();
+    const sessionTiles = parseInt(sessionStorage.getItem('sessionTiles') || '0');
     
-    const { doc, onSnapshot } = 
-      await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js');
-    
-    const unsub = onSnapshot(doc(state.db, 'stats', `user-${state.user.uid}`), (snapshot) => {
-      const mine = snapshot.exists() ? (snapshot.data().mine || 0) : 0;
-      ['statMine', 'statMineMobile'].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.textContent = utils.formatNumber(mine);
-      });
+    ['statMine', 'statMineMobile'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = utils.formatNumber(sessionTiles);
     });
-    
-    state.unsubscriptions.push(unsub);
   }
 };
 
