@@ -32,7 +32,8 @@ body{
   position:sticky;top:0;z-index:1000;
   height:60px;
 }
-.brand{font-weight:700;color:var(--brand);font-size:18px}
+.brand{display:flex;align-items:center;}
+.brand-title{margin:0;font-size:18px;font-weight:700;color:var(--brand)}
 .controls{display:flex;gap:10px;align-items:center}
 .country-label{display:flex;gap:8px;align-items:center;color:var(--muted)}
 .country-label-text{display:inline}
@@ -63,15 +64,234 @@ body{
 .map-wrap{
   background:var(--panel);border:1px solid var(--line);
   border-radius:var(--radius);overflow:hidden;position:relative;
+  order:1; /* Map on left */
 }
 #map{width:100%;height:100%}
 
-/* Mobile Controls (hidden on desktop) */
-.mobile-controls{display:none}
-.mobile-bottom-sheet{display:none}
+/* Mobile Color Control - Top Right */
+.mobile-color-control{
+  display:none;
+  position:fixed;
+  top:70px;
+  right:15px;
+  z-index:1000;
+}
+
+.mobile-color-input{
+  width:48px;
+  height:48px;
+  border:3px solid #fff;
+  border-radius:50%;
+  cursor:pointer;
+  box-shadow:0 2px 10px rgba(0,0,0,0.3), 0 0 0 2px var(--brand);
+}
+
+/* Mobile Panel - Bottom */
+.mobile-panel{
+  display:none;
+  position:fixed;
+  bottom:0;
+  left:0;
+  right:0;
+  background:var(--panel);
+  border-top:2px solid var(--brand);
+  height:120px;
+  z-index:900;
+}
+
+.mobile-tabs{
+  display:flex;
+  justify-content:space-around;
+  padding:8px;
+  border-bottom:1px solid var(--line);
+}
+
+.mobile-tab{
+  background:none;
+  border:none;
+  color:var(--muted);
+  font-size:20px;
+  padding:4px 12px;
+  cursor:pointer;
+  transition:all 0.2s;
+}
+
+.mobile-tab.active{
+  color:var(--brand);
+  transform:scale(1.2);
+}
+
+.mobile-content{
+  padding:8px;
+  height:calc(100% - 45px);
+  overflow-y:auto;
+}
+
+.mobile-section{
+  display:none;
+}
+
+.mobile-section.active{
+  display:block;
+}
+
+/* Mobile Ranking */
+.period-selector{
+  display:flex;
+  gap:8px;
+  margin-bottom:8px;
+}
+
+.period-btn{
+  flex:1;
+  padding:4px;
+  background:var(--btn);
+  border:1px solid var(--line);
+  border-radius:6px;
+  color:var(--text);
+  font-size:12px;
+  cursor:pointer;
+}
+
+.period-btn.active{
+  background:var(--brand);
+  color:#fff;
+}
+
+.mobile-ranking{
+  list-style:none;
+  padding:0;
+  margin:0;
+  font-size:13px;
+}
+
+.mobile-ranking li{
+  display:flex;
+  justify-content:space-between;
+  padding:3px 0;
+  border-bottom:1px dashed var(--line);
+}
+
+/* Mobile Stats */
+.stats-container{
+  display:flex;
+  justify-content:space-around;
+  padding:10px 0;
+}
+
+.stat-item{
+  text-align:center;
+}
+
+.stat-number{
+  font-size:24px;
+  font-weight:bold;
+  color:var(--brand);
+}
+
+.stat-name{
+  font-size:12px;
+  color:var(--muted);
+}
+
+/* Mobile Timer */
+.timer-display{
+  text-align:center;
+  padding:15px;
+}
+
+.cooldown-bar{
+  width:100%;
+  height:8px;
+  background:rgba(0,0,0,0.3);
+  border-radius:4px;
+  margin-bottom:10px;
+  overflow:hidden;
+}
+
+.cooldown-progress{
+  height:100%;
+  background:linear-gradient(90deg,#10b981,#60a5fa);
+  transition:width 0.1s;
+}
+
+.timer-text{
+  font-size:16px;
+  color:var(--text);
+}
+
+/* Mobile Info */
+.info-content{
+  text-align:center;
+  padding:10px;
+}
+
+.info-link{
+  color:var(--brand);
+  text-decoration:none;
+}
+
+/* Mobile Styles */
+@media (max-width: 768px){
+  body{overflow:hidden}
+  
+  .topbar{
+    padding:8px 12px;height:50px;
+  }
+  .brand-title{font-size:16px}
+  .country-label-text{display:none}
+  .country-label select{padding:5px 24px 5px 8px;font-size:13px}
+  .btn{padding:5px 10px;font-size:13px}
+  
+  .main{
+    grid-template-columns:1fr;
+    padding:0;gap:0;
+    height:calc(100vh - 50px);
+  }
+  
+  .desktop-side{display:none}
+  
+  .map-wrap{
+    border-radius:0;border:none;
+    height:calc(100vh - 50px - 120px);
+  }
+  
+  .mobile-color-control{
+    display:block;
+  }
+  
+  .mobile-panel{
+    display:block;
+  }
+  
+  /* Hide all Leaflet controls except zoom */
+  .leaflet-control-attribution,
+  .leaflet-control-layers{
+    display:none!important;
+  }
+  
+  /* Position zoom control */
+  .leaflet-top.leaflet-left{
+    top:10px;
+    left:10px;
+  }
+  
+  .leaflet-control-zoom{
+    border-radius:10px!important;
+    box-shadow:0 2px 8px rgba(0,0,0,0.3)!important;
+  }
+  
+  /* Toast on mobile */
+  .toast-container{
+    top:60px;
+  }
+}
 
 /* Desktop Sidebar */
-.desktop-side{display:flex;flex-direction:column;gap:14px;overflow-y:auto;overflow-x:hidden}
+.desktop-side{
+  display:flex;flex-direction:column;gap:14px;overflow-y:auto;overflow-x:hidden;
+  order:2; /* Sidebar on right */
+}
 .card{
   background:var(--panel);border:1px solid var(--line);
   border-radius:var(--radius);padding:14px;box-shadow:var(--shadow);
@@ -191,131 +411,172 @@ body{
   
   .map-wrap{
     border-radius:0;border:none;
-    height:calc(100vh - 50px - 180px);
+    height:calc(100vh - 50px - 160px); /* Reduced bottom sheet height */
   }
   
-  /* Mobile Controls */
+  /* Mobile Controls - Floating Action Button Style */
   .mobile-controls{
-    display:block;position:absolute;bottom:20px;right:20px;
-    z-index:500;
+    display:block;position:fixed;bottom:170px;right:15px;
+    z-index:900; /* High z-index to stay above everything */
   }
   
   .quick-color-picker{
-    display:flex;align-items:center;gap:10px;
-    background:var(--panel);padding:10px 14px;
-    border-radius:25px;border:1px solid var(--line);
-    box-shadow:var(--shadow);backdrop-filter:blur(10px);
-    background:rgba(19,28,47,0.95);
+    display:flex;flex-direction:column;align-items:center;gap:8px;
+    background:rgba(19,28,47,0.95);padding:12px;
+    border-radius:16px;border:2px solid var(--brand);
+    box-shadow:0 4px 20px rgba(0,0,0,0.5);
+    backdrop-filter:blur(10px);
   }
   
   .mobile-color-picker{
-    width:40px;height:40px;border:2px solid var(--line);
-    border-radius:50%;cursor:pointer;
+    width:44px;height:44px;border:2px solid #fff;
+    border-radius:50%;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.3);
   }
   
   .brush-indicator{
-    color:var(--text);font-weight:600;font-size:14px;
-    background:var(--btn);padding:4px 10px;border-radius:12px;
+    color:#fff;font-weight:700;font-size:13px;
+    background:var(--brand);padding:6px 12px;border-radius:14px;
+    box-shadow:0 2px 8px rgba(96,165,250,0.4);
   }
   
-  /* Mobile Bottom Sheet */
+  /* Mobile Bottom Sheet - Compact */
   .mobile-bottom-sheet{
     display:block;position:fixed;bottom:0;left:0;right:0;
-    background:var(--panel);border-top:1px solid var(--line);
-    border-radius:20px 20px 0 0;height:180px;
-    box-shadow:0 -4px 20px rgba(0,0,0,0.3);
-    z-index:600;transition:height 0.3s ease;
+    background:var(--panel);border-top:2px solid var(--brand);
+    border-radius:16px 16px 0 0;height:160px;
+    box-shadow:0 -4px 24px rgba(0,0,0,0.4);
+    z-index:800;transition:height 0.3s cubic-bezier(0.4,0,0.2,1);
   }
   
-  .mobile-bottom-sheet.expanded{height:60vh;overflow-y:auto}
+  .mobile-bottom-sheet.expanded{height:70vh;overflow-y:auto}
   
   .sheet-handle{
-    width:40px;height:4px;background:var(--line);
-    border-radius:2px;margin:10px auto 8px;cursor:grab;
+    width:50px;height:5px;background:var(--brand);
+    border-radius:3px;margin:8px auto 6px;cursor:grab;
+    opacity:0.6;transition:opacity 0.2s;
   }
+  
+  .sheet-handle:active{opacity:1}
   
   .sheet-tabs{
     display:flex;justify-content:space-around;
-    border-bottom:1px solid var(--line);padding:0 10px;
+    border-bottom:1px solid var(--line);padding:0 8px;
   }
   
   .sheet-tab{
     flex:1;background:none;border:none;color:var(--muted);
-    padding:10px 5px;font-size:12px;cursor:pointer;
-    border-bottom:2px solid transparent;transition:all 0.2s;
+    padding:8px 4px;font-size:11px;cursor:pointer;
+    border-bottom:3px solid transparent;transition:all 0.2s;
+    white-space:nowrap;
   }
   
   .sheet-tab.active{
     color:var(--brand);border-bottom-color:var(--brand);
-    font-weight:600;
+    font-weight:700;
   }
   
-  .sheet-content{padding:12px;height:calc(100% - 60px);overflow-y:auto}
+  .sheet-content{
+    padding:10px;height:calc(100% - 55px);overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
+  }
   
   .sheet-panel{display:none}
-  .sheet-panel.active{display:block;animation:fadeIn 0.3s ease}
+  .sheet-panel.active{display:block;animation:fadeIn 0.2s ease}
   
   @keyframes fadeIn{
-    from{opacity:0}to{opacity:1}
+    from{opacity:0;transform:translateY(10px)}
+    to{opacity:1;transform:translateY(0)}
   }
   
   /* Mobile Ranking */
-  .mobile-ranking{max-height:none;margin:8px 0 0}
-  .seg.compact{margin-bottom:8px}
+  .mobile-ranking{max-height:none;margin:6px 0 0}
+  .seg.compact{margin-bottom:6px}
+  .seg.compact .seg-btn{padding:5px 10px;font-size:12px}
   
-  /* Mobile Stats */
+  /* Mobile Stats - Horizontal Layout */
   .stat-grid{
-    display:grid;grid-template-columns:repeat(3,1fr);gap:10px;
+    display:flex;justify-content:space-around;gap:8px;
+    padding:8px 0;
   }
   
   .stat-card{
-    background:var(--btn);padding:12px 8px;border-radius:12px;
-    text-align:center;border:1px solid var(--line);
+    background:linear-gradient(135deg,var(--btn),var(--btn-active));
+    padding:10px 8px;border-radius:12px;
+    text-align:center;border:1px solid var(--brand);
+    flex:1;min-width:0;
   }
   
   .stat-value{
-    font-size:20px;font-weight:800;color:var(--brand);
-    margin-bottom:4px;
+    font-size:22px;font-weight:800;color:var(--brand);
+    margin-bottom:2px;
   }
   
-  .stat-label{font-size:11px;color:var(--muted);line-height:1.2}
+  .stat-label{font-size:10px;color:var(--muted);line-height:1.1}
   
   /* Mobile Brush Panel */
-  .brush-section,.color-section,.tile-section{margin-bottom:16px}
+  .brush-section,.color-section{margin-bottom:12px}
   
   .color-presets{
-    display:grid;grid-template-columns:repeat(8,1fr);gap:8px;
-    margin:8px 0;
+    display:flex;gap:6px;
+    margin:8px 0;overflow-x:auto;
+    padding:2px 0;
   }
   
   .color-preset{
-    width:36px;height:36px;border-radius:50%;border:2px solid var(--line);
-    cursor:pointer;transition:transform 0.2s;
+    min-width:32px;width:32px;height:32px;
+    border-radius:50%;border:2px solid var(--line);
+    cursor:pointer;transition:all 0.2s;
+    flex-shrink:0;
   }
   
-  .color-preset:active{transform:scale(0.9)}
-  .color-preset.active{border-color:var(--brand);box-shadow:0 0 0 3px rgba(96,165,250,0.3)}
+  .color-preset:active{transform:scale(0.85)}
+  .color-preset.active{
+    border-color:var(--brand);
+    box-shadow:0 0 0 3px rgba(96,165,250,0.3),0 2px 8px rgba(96,165,250,0.5);
+  }
   
-  .color-row.mobile{margin-top:8px}
+  .color-row.mobile{
+    margin-top:6px;display:flex;gap:8px;align-items:center;
+  }
+  
+  .color-row.mobile .color-hex{flex:1;font-size:13px;padding:5px 8px}
+  .color-row.mobile .color-picker{width:36px;height:30px}
   
   /* Mobile Cooldown */
-  .cooldown-display{text-align:center;padding:10px}
+  .cooldown-display{text-align:center;padding:8px}
   
   .mobile-cooldown{
-    width:100%;height:20px;margin-bottom:12px;border-radius:10px;
+    width:100%;height:16px;margin-bottom:8px;border-radius:8px;
+    background:rgba(17,26,43,0.8);
   }
   
   .cooldown-time{
-    font-size:28px;font-weight:800;color:var(--brand);margin-bottom:8px;
+    font-size:24px;font-weight:800;color:var(--brand);
+    margin-bottom:4px;text-shadow:0 2px 4px rgba(0,0,0,0.3);
   }
   
   .cooldown-details{
-    display:flex;justify-content:center;gap:15px;
-    color:var(--muted);font-size:13px;
+    display:flex;justify-content:center;gap:12px;
+    color:var(--muted);font-size:11px;
   }
   
   /* Toast on mobile */
   .toast-container{top:60px}
+  
+  /* Hide Leaflet attribution on mobile to avoid overlap */
+  .leaflet-control-attribution{
+    display:none!important;
+  }
+  
+  /* Leaflet controls positioning */
+  .leaflet-top.leaflet-left{
+    top:10px;left:10px;
+  }
+  
+  .leaflet-control-zoom{
+    border-radius:12px!important;
+    box-shadow:0 2px 12px rgba(0,0,0,0.3)!important;
+  }
 }
 
 /* Tablet adjustments */
@@ -354,4 +615,12 @@ body{
   background:rgba(15,23,42,0.8)!important;
   color:var(--muted)!important;
   font-size:11px!important;
+  margin-bottom:60px!important; /* Space for mobile controls */
+}
+
+/* Mobile specific attribution fix */
+@media (max-width: 768px) {
+  .leaflet-control-attribution{
+    margin-bottom:80px!important; /* More space on mobile */
+  }
 }
