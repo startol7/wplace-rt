@@ -320,11 +320,19 @@ const ui = {
       });
     });
     
-    // Period selectors
-    document.querySelectorAll('[data-period], [data-period-mobile]').forEach(btn => {
+    // Desktop period selectors
+    document.querySelectorAll('.seg-btn[data-period]').forEach(btn => {
       btn.addEventListener('click', () => {
-        const selector = btn.dataset.period ? '[data-period]' : '[data-period-mobile]';
-        document.querySelectorAll(selector).forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.seg-btn[data-period]').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        firebase.subscribeToRanking();
+      });
+    });
+    
+    // Mobile period selectors
+    document.querySelectorAll('.period-btn[data-period-mobile]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.period-btn[data-period-mobile]').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         firebase.subscribeToRanking();
       });
@@ -420,6 +428,8 @@ const ui = {
   },
   
   updateRanking(data) {
+    console.log('Updating ranking with data:', data);
+    
     const html = data.length === 0 ? 
       '<li>No data yet</li>' :
       data.map((item, index) => 
@@ -431,7 +441,10 @@ const ui = {
     
     ['rankingList', 'rankingListMobile'].forEach(id => {
       const el = document.getElementById(id);
-      if (el) el.innerHTML = html;
+      if (el) {
+        el.innerHTML = html;
+        console.log(`Updated ${id}`);
+      }
     });
   },
   
@@ -465,13 +478,14 @@ const firebase = {
       const app = appModule.initializeApp(CONFIG.FIREBASE);
       state.db = firestoreModule.getFirestore(app);
       
+      state.firebaseReady = true;
+      
       // Subscribe to tiles
-      this.subscribeToTiles();
+      await this.subscribeToTiles();
       
       // Subscribe to data
       this.subscribeToData();
       
-      state.firebaseReady = true;
       ui.showToast('Connected', 'success');
       return true;
     } catch (error) {
@@ -583,6 +597,7 @@ const firebase = {
   },
   
   subscribeToData() {
+    console.log('Subscribing to data...');
     this.subscribeToRanking();
     this.subscribeToUserStats();
   },
@@ -610,34 +625,51 @@ const firebase = {
   async subscribeToRanking() {
     if (!state.firebaseReady) return;
     
-    const period = document.querySelector('[data-period].active')?.dataset.period ||
-                   document.querySelector('[data-period-mobile].active')?.dataset.periodMobile ||
-                   'today';
+    // 選択された期間を取得
+    const desktopPeriod = document.querySelector('.seg-btn.active[data-period]')?.dataset.period;
+    const mobilePeriod = document.querySelector('.period-btn.active[data-period-mobile]')?.dataset.periodMobile;
+    const period = desktopPeriod || mobilePeriod || 'today';
     
     const periodKey = this.getPeriodKeys()[period];
     
-    const { collection, query, orderBy, limit, onSnapshot } = 
-      await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js');
-    
-    const q = query(
-      collection(state.db, 'scores', periodKey, 'countries'),
-      orderBy('count', 'desc'),
-      limit(10)
-    );
-    
-    const unsub = onSnapshot(q, (snapshot) => {
-      const data = snapshot.docs.map(doc => ({
-        country: doc.id,
-        count: doc.data().count || 0
-      }));
-      ui.updateRanking(data);
-    });
-    
-    // Cancel previous subscription
-    if (state.unsubscriptions.ranking) {
-      state.unsubscriptions.ranking();
+    try {
+      const { collection, query, orderBy, limit, onSnapshot } = 
+        await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js');
+      
+      // Cancel previous subscription
+      if (state.unsubscriptions.ranking) {
+        state.unsubscriptions.ranking();
+      }
+      
+      const q = query(
+        collection(state.db, 'scores', periodKey, 'countries'),
+        orderBy('count', 'desc'),
+        limit(10)
+      );
+      
+      const unsub = onSnapshot(q, 
+        (snapshot) => {
+          const data = [];
+          snapshot.forEach(doc => {
+            data.push({
+              country: doc.id,
+              count: doc.data().count || 0
+            });
+          });
+          
+          ui.updateRanking(data);
+        },
+        (error) => {
+          console.warn('Ranking subscription error:', error);
+          ui.updateRanking([]);
+        }
+      );
+      
+      state.unsubscriptions.ranking = unsub;
+    } catch (error) {
+      console.error('Failed to subscribe to ranking:', error);
+      ui.updateRanking([]);
     }
-    state.unsubscriptions.ranking = unsub;
   },
   
   subscribeToUserStats() {
@@ -657,23 +689,4 @@ const firebase = {
 // ----------------------------
 let mapManager;
 
-window.addEventListener('DOMContentLoaded', () => {
-  console.log('Initializing TePlace...');
-  
-  // Initialize components
-  mapManager = new MapManager();
-  ui.init();
-  firebase.init();
-  
-  // Performance optimization for mobile
-  if (state.isMobile) {
-    document.addEventListener('touchstart', () => {}, { passive: true });
-  }
-  
-  console.log('TePlace ready!');
-});
-
-// Cleanup on page unload
-window.addEventListener('beforeunload', () => {
-  state.unsubscriptions.forEach(unsub => unsub && unsub());
-});
+window.addEventListener('DOMConten
