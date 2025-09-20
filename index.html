@@ -1,197 +1,553 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=5" />
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  
-  <!-- SEO Meta Tags -->
-  <title>TePlace - Real World Map Conquest Game | Paint Territories Online</title>
-  <meta name="description" content="TePlace is a free multiplayer map conquest game. Paint territories on the real world map, compete with players globally, climb rankings. Inspired by r/place. Play now!">
-  <meta name="keywords" content="teplace, map game, territory game, conquest game, multiplayer game, online game, r/place game, world map game, paint territories, browser game">
-  <meta name="author" content="TePlace Team">
-  <meta name="robots" content="index, follow">
-  
-  <!-- Open Graph / Facebook -->
-  <meta property="og:type" content="website">
-  <meta property="og:url" content="https://teplace.onrender.com/">
-  <meta property="og:title" content="TePlace - Real World Map Conquest Game">
-  <meta property="og:description" content="Paint territories on the real world map and compete with players globally in this multiplayer conquest game.">
-  <meta property="og:image" content="https://teplace.onrender.com/og-image.png">
-  
-  <!-- Twitter -->
-  <meta property="twitter:card" content="summary_large_image">
-  <meta property="twitter:url" content="https://teplace.onrender.com/">
-  <meta property="twitter:title" content="TePlace - Real World Map Conquest Game">
-  <meta property="twitter:description" content="Paint territories on the real world map and compete with players globally.">
-  <meta property="twitter:image" content="https://teplace.onrender.com/og-image.png">
-  
-  <!-- Canonical URL -->
-  <link rel="canonical" href="https://teplace.onrender.com/">
-  
-  <!-- Favicon -->
-  <link rel="icon" type="image/png" sizes="32x32" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAACXBIWXMAAA7EAAAOxAGVKw4bAAADH0lEQVRYhbWXS2gTURSGv5nJpElMTWtttVqtVkVBEcGFLnThRl24EHHhwoULQVy4cCEiuHDhQkRw4cKFiODChQsRwYULFy5EBBcuXLiwoNVqa2ub5jWT3HthJpkkk2Qyk/6QkDn3nPPPueeee88VhBCCMlq9ejWtra0sXLiQlpYWmpqaaGxsRJZlDMNgbGyMwcFBBgYG6Onpobe3l56eHiYnJ8stVZ4AuVxODA8Pi46ODrFlyxbR1NQkgLJpaWkR27ZtE52dnWJoaEjkcjm/3PwJmJycFMePHxfz5s3znbzULFiwQJw8eVJMTEyUSyy+gFQqJY4ePSrq6+urEl5oGhsbxbFjx0QqlSqVWJyAbDYrTp8+LWRZrlnyQqPRaIjTp0+LbDb7W0aMUQLOnDkjIpFIzcUXmtmzZ4tz584VE2EXkEwmxf79+4Mj3kJXV5dIJpNOETYBuq6LXbt2BU+8ha1bt4psNmsXYQpIp9Ni586dNSPeMAxxaWtCtMZzlZ/ZtWuXSKfThggLg6IoYtu2bVVN/vtHSmx9PCL2PBsVh1+MiUMvxsTe56Ni65MRseHBsPg5o/vO19zcLDo6OoSiKObte+jQodDEf53Jij3PRkXsyE+ROPVLLDvzS8SO/BS7n46K8Wndd94DBw4YZnQYXV1dVRH/dUYXm5vayxMfk8TmRyPCSKhsAd3d3aYJT5w4EViEoRli25MRXxMasSPCCFdFAcePHzcFnD9/vsJJnRroT4vEyfxk2xL5iQ8++1n2/Z4/P8Xpt7/EsjO/xP5+oRRLwGQnT56UBEEQ7t+/X/GkheruT4vEqV+itdQksbyo8E0VkwshhKGqquHO2L9/v0kmLS0todYppl+/fiGEEJIoZdkdPHgwNPEWVCoVy6A8P9FqR1VVUQQhqtVqX79+hRY/MzPDx48fAZBlmXg8TktLCy0tLcyaNSvUegDJZBIAmAUTExOhTWiaplgshoaGBpqbm0MvU0wTExMAzBJCCMViMUKh0F8TH4vFEEIIGWDlypWBDPizWrVqFQDR/wH+AdWQXI9OT8yNAAAAAElFTkSuQmCC">
-  
-  <!-- Structured Data -->
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "WebApplication",
-    "name": "TePlace",
-    "description": "Real world map conquest game where players paint territories and compete globally",
-    "url": "https://teplace.onrender.com/",
-    "applicationCategory": "GameApplication",
-    "genre": "Strategy",
-    "browserRequirements": "Requires JavaScript. Works on modern browsers.",
-    "offers": {
-      "@type": "Offer",
-      "price": "0",
-      "priceCurrency": "USD"
-    }
-  }
-  </script>
-  
-  <link rel="stylesheet" href="style.css" />
-  <!-- Leaflet CSS -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <!-- Preconnect for performance -->
-  <link rel="preconnect" href="https://tile.openstreetmap.org">
-  <link rel="preconnect" href="https://www.gstatic.com">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TePlace - World Map Game</title>
+    
+    <!-- Leaflet CSS - 重要: 最初に読み込む -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+            background: #1a1a2e;
+            color: #fff;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        /* ヘッダー */
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+            height: 60px;
+        }
+        
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+        
+        select {
+            padding: 8px 15px;
+            border-radius: 5px;
+            border: none;
+            background: rgba(255,255,255,0.9);
+            color: #333;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        
+        /* メインレイアウト */
+        .container {
+            display: flex;
+            height: calc(100vh - 60px);
+        }
+        
+        /* 地図コンテナ - 最重要 */
+        #map {
+            flex: 1;
+            height: 100%;
+            background: #f0f0f0;
+            z-index: 1;
+        }
+        
+        /* サイドバー */
+        .sidebar {
+            width: 320px;
+            background: #0f3460;
+            padding: 20px;
+            overflow-y: auto;
+            box-shadow: -2px 0 10px rgba(0,0,0,0.3);
+        }
+        
+        .panel {
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .panel h3 {
+            margin-bottom: 10px;
+            font-size: 18px;
+            color: #ffd700;
+        }
+        
+        /* カラーピッカー */
+        .color-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-top: 10px;
+        }
+        
+        .color-picker {
+            width: 50px;
+            height: 50px;
+            border: 3px solid #fff;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+        
+        .color-hex {
+            flex: 1;
+            padding: 8px;
+            border-radius: 5px;
+            border: 1px solid rgba(255,255,255,0.3);
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+            font-family: monospace;
+        }
+        
+        /* ランキング */
+        .tabs {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 10px;
+        }
+        
+        .tab {
+            flex: 1;
+            padding: 8px;
+            background: rgba(255,255,255,0.1);
+            border: none;
+            color: #fff;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .tab.active {
+            background: #667eea;
+        }
+        
+        .ranking-list {
+            list-style: none;
+        }
+        
+        .ranking-list li {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .ranking-list strong {
+            color: #ffd700;
+        }
+        
+        /* 統計 */
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .stat {
+            text-align: center;
+            padding: 10px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 5px;
+        }
+        
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #4caf50;
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            color: rgba(255,255,255,0.7);
+            margin-top: 5px;
+        }
+        
+        /* クールダウン */
+        .cooldown {
+            margin-top: 10px;
+            padding: 10px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 5px;
+            text-align: center;
+        }
+        
+        .cooldown-bar {
+            width: 100%;
+            height: 10px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 5px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        
+        .cooldown-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4caf50, #8bc34a);
+            width: 0%;
+            transition: width 0.1s linear;
+        }
+        
+        /* モバイル対応 */
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+            
+            #map {
+                height: 60vh;
+            }
+            
+            .sidebar {
+                width: 100%;
+                height: 40vh;
+                padding: 10px;
+            }
+            
+            .header {
+                padding: 10px;
+            }
+            
+            .logo {
+                font-size: 18px;
+            }
+            
+            .controls {
+                gap: 10px;
+            }
+            
+            select {
+                padding: 5px 10px;
+                font-size: 12px;
+            }
+        }
+        
+        /* トースト */
+        .toast {
+            position: fixed;
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #4caf50;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 5px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+            z-index: 10000;
+            animation: slideIn 0.3s ease;
+        }
+        
+        @keyframes slideIn {
+            from {
+                top: 60px;
+                opacity: 0;
+            }
+            to {
+                top: 80px;
+                opacity: 1;
+            }
+        }
+    </style>
 </head>
 <body>
-  <header class="topbar">
-    <div class="brand">
-      <h1 class="brand-title">🌍 TePlace</h1>
+    <!-- ヘッダー -->
+    <div class="header">
+        <div class="logo">
+            🌍 TePlace
+        </div>
+        <div class="controls">
+            <select id="countrySelect">
+                <option value="Japan">Japan</option>
+                <option value="United States">United States</option>
+                <option value="Korea">Korea</option>
+                <option value="China">China</option>
+                <option value="United Kingdom">United Kingdom</option>
+                <option value="France">France</option>
+                <option value="Germany">Germany</option>
+                <option value="Brazil">Brazil</option>
+            </select>
+        </div>
     </div>
-    <div class="controls">
-      <label class="country-label">
-        <span class="country-label-text">Country:</span>
-        <select id="countrySelect" aria-label="Select your country"></select>
-      </label>
+    
+    <!-- メインコンテナ -->
+    <div class="container">
+        <!-- 地図 - 最重要要素 -->
+        <div id="map"></div>
+        
+        <!-- サイドバー -->
+        <div class="sidebar">
+            <!-- 統計パネル -->
+            <div class="panel">
+                <h3>📊 Statistics</h3>
+                <div class="stats">
+                    <div class="stat">
+                        <div class="stat-value" id="statTotal">0</div>
+                        <div class="stat-label">Total</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value" id="statMine">0</div>
+                        <div class="stat-label">Yours</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value" id="statOnline">0</div>
+                        <div class="stat-label">Online</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- カラーパネル -->
+            <div class="panel">
+                <h3>🎨 Color</h3>
+                <div class="color-controls">
+                    <input type="color" class="color-picker" id="colorPicker" value="#ff4444">
+                    <input type="text" class="color-hex" id="colorHex" value="#ff4444">
+                </div>
+            </div>
+            
+            <!-- ランキングパネル -->
+            <div class="panel">
+                <h3>🏆 World Ranking</h3>
+                <div class="tabs">
+                    <button class="tab active" data-period="today">Today</button>
+                    <button class="tab" data-period="week">Week</button>
+                    <button class="tab" data-period="month">Month</button>
+                </div>
+                <ul class="ranking-list" id="rankingList">
+                    <li>Loading...</li>
+                </ul>
+            </div>
+            
+            <!-- クールダウンパネル -->
+            <div class="panel">
+                <h3>⏱️ Cooldown</h3>
+                <div class="cooldown">
+                    <div id="cooldownText">Ready!</div>
+                    <div class="cooldown-bar">
+                        <div class="cooldown-fill" id="cooldownFill"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
-  </header>
-
-  <main class="main">
-    <section class="map-wrap">
-      <div id="map" role="application" aria-label="Interactive world map for painting territories"></div>
-      <!-- Mobile floating control - Top right position -->
-      <div class="mobile-color-control">
-        <input id="mobileColorPicker" class="mobile-color-input" type="color" value="#ff4b4b" aria-label="Choose color" />
-      </div>
-    </section>
-
-    <aside class="side desktop-side">
-      <section class="card">
-        <h2 class="card-title">🏆 World Ranking</h2>
-        <div class="seg" role="tablist">
-          <button class="seg-btn active" data-period="today" role="tab" aria-selected="true">Today</button>
-          <button class="seg-btn" data-period="week" role="tab" aria-selected="false">Week</button>
-          <button class="seg-btn" data-period="month" role="tab" aria-selected="false">Month</button>
-        </div>
-        <ul id="rankingList" class="ranking" role="tabpanel">
-          <li>Loading rankings...</li>
-        </ul>
-      </section>
-
-      <section class="card">
-        <h2 class="card-title">📊 Statistics</h2>
-        <div class="stat-row"><span>Total territories</span><strong id="statTotal">0</strong></div>
-        <div class="stat-row"><span>My territories</span><strong id="statMine">0</strong></div>
-        <div class="stat-row"><span>Online players</span><strong id="statOnline">0</strong></div>
-      </section>
-
-      <section class="card">
-        <h2 class="card-title">🎨 Paint Settings</h2>
-        <label class="color-row">
-          <span>Color</span>
-          <input id="colorHex" class="color-hex" value="#ff4b4b" maxlength="7" aria-label="Color hex code" />
-          <input id="colorPicker" class="color-picker" type="color" value="#ff4b4b" aria-label="Color picker" />
-        </label>
-        <p class="note">
-          Click anywhere on the map to paint!<br>
-          Cooldown: 5 seconds per tile
-        </p>
-      </section>
-
-      <section class="card">
-        <h2 class="card-title">⏳ Cooldown Timer</h2>
-        <div id="cooldown" class="cooldown hidden" role="progressbar" aria-valuemin="0" aria-valuemax="100">
-          <div id="cooldownFill" class="cooldown-fill"></div>
-        </div>
-        <div class="cooldown-text">Status: <span id="cooldownText">Ready</span></div>
-      </section>
-
-      <nav class="card">
-        <a href="about.html" class="about-link">How to Play →</a>
-        <a href="https://github.com/yourusername/teplace" class="about-link" target="_blank" rel="noopener">GitHub →</a>
-      </nav>
-    </aside>
-
-    <!-- Mobile Bottom Panel - Simplified -->
-    <div class="mobile-panel">
-      <div class="mobile-tabs">
-        <button class="mobile-tab active" data-tab="ranking">🏆</button>
-        <button class="mobile-tab" data-tab="stats">📊</button>
-        <button class="mobile-tab" data-tab="timer">⏳</button>
-        <button class="mobile-tab" data-tab="info">ℹ️</button>
-      </div>
-      
-      <div class="mobile-content">
-        <div class="mobile-section active" id="section-ranking">
-          <div class="period-selector">
-            <button class="period-btn active" data-period-mobile="today">Today</button>
-            <button class="period-btn" data-period-mobile="week">Week</button>
-            <button class="period-btn" data-period-mobile="month">Month</button>
-          </div>
-          <ul id="rankingListMobile" class="mobile-ranking">
-            <li>Loading...</li>
-          </ul>
-        </div>
-
-        <div class="mobile-section" id="section-stats">
-          <div class="stats-container">
-            <div class="stat-item">
-              <div class="stat-number" id="statTotalMobile">0</div>
-              <div class="stat-name">Total</div>
-            </div>
-            <div class="stat-item">
-              <div class="stat-number" id="statMineMobile">0</div>
-              <div class="stat-name">Mine</div>
-            </div>
-            <div class="stat-item">
-              <div class="stat-number" id="statOnlineMobile">0</div>
-              <div class="stat-name">Online</div>
-            </div>
-          </div>
-        </div>
-
-        <div class="mobile-section" id="section-timer">
-          <div class="timer-display">
-            <div id="cooldownMobile" class="cooldown-bar hidden">
-              <div id="cooldownFillMobile" class="cooldown-progress"></div>
-            </div>
-            <div class="timer-text" id="cooldownTextMobile">Ready to paint!</div>
-          </div>
-        </div>
-
-        <div class="mobile-section" id="section-info">
-          <div class="info-content">
-            <p>Click the map to paint territories for your country!</p>
-            <a href="about.html" class="info-link">Learn More →</a>
-          </div>
-        </div>
-      </div>
-    </div>
-  </main>
-
-  <!-- Toast Container -->
-  <div id="toastContainer" class="toast-container" role="alert" aria-live="polite"></div>
-
-  <!-- Leaflet JS -->
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <!-- App -->
-  <script src="script.js" type="module"></script>
+    
+    <!-- Leaflet JS - 重要: bodyの最後に -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <!-- メインスクリプト -->
+    <script>
+        // ======================
+        // TePlace - Simple Version
+        // ======================
+        
+        // グローバル変数
+        let map = null;
+        let tilesLayer = null;
+        let currentCountry = 'Japan';
+        let currentColor = '#ff4444';
+        let cooldownEnd = 0;
+        let myTileCount = 0;
+        
+        // 地図の初期化
+        function initMap() {
+            console.log('地図を初期化中...');
+            
+            // Leaflet地図を作成
+            map = L.map('map').setView([35.6762, 139.6503], 5);
+            
+            // OpenStreetMapタイルを追加
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap',
+                maxZoom: 18
+            }).addTo(map);
+            
+            // タイル描画用レイヤー
+            tilesLayer = L.layerGroup().addTo(map);
+            
+            // クリックイベント
+            map.on('click', onMapClick);
+            
+            console.log('地図の初期化完了');
+        }
+        
+        // タイルサイズ
+        const TILE_SIZE = 0.001;
+        
+        // タイル描画
+        function drawTile(lat, lng, color) {
+            const bounds = [
+                [lat, lng],
+                [lat + TILE_SIZE, lng + TILE_SIZE]
+            ];
+            
+            L.rectangle(bounds, {
+                color: color,
+                fillColor: color,
+                fillOpacity: 0.5,
+                weight: 1
+            }).addTo(tilesLayer);
+        }
+        
+        // 地図クリック
+        function onMapClick(e) {
+            // クールダウンチェック
+            if (Date.now() < cooldownEnd) {
+                showToast('Wait for cooldown!');
+                return;
+            }
+            
+            // タイル描画
+            const lat = Math.floor(e.latlng.lat / TILE_SIZE) * TILE_SIZE;
+            const lng = Math.floor(e.latlng.lng / TILE_SIZE) * TILE_SIZE;
+            
+            drawTile(lat, lng, currentColor);
+            
+            // カウント更新
+            myTileCount++;
+            document.getElementById('statMine').textContent = myTileCount;
+            
+            // クールダウン開始
+            startCooldown();
+            
+            // Firebase保存（後で実装）
+            saveToFirebase(lat, lng, currentColor);
+        }
+        
+        // クールダウン
+        function startCooldown() {
+            cooldownEnd = Date.now() + 5000; // 5秒
+            const cooldownFill = document.getElementById('cooldownFill');
+            const cooldownText = document.getElementById('cooldownText');
+            
+            const timer = setInterval(() => {
+                const remaining = cooldownEnd - Date.now();
+                if (remaining <= 0) {
+                    cooldownFill.style.width = '0%';
+                    cooldownText.textContent = 'Ready!';
+                    clearInterval(timer);
+                } else {
+                    const percent = ((5000 - remaining) / 5000) * 100;
+                    cooldownFill.style.width = percent + '%';
+                    cooldownText.textContent = Math.ceil(remaining / 1000) + 's';
+                }
+            }, 100);
+        }
+        
+        // UI設定
+        function setupUI() {
+            // カラーピッカー
+            const picker = document.getElementById('colorPicker');
+            const hex = document.getElementById('colorHex');
+            
+            picker.addEventListener('input', (e) => {
+                currentColor = e.target.value;
+                hex.value = e.target.value;
+            });
+            
+            hex.addEventListener('input', (e) => {
+                if (/^#[0-9a-f]{6}$/i.test(e.target.value)) {
+                    currentColor = e.target.value;
+                    picker.value = e.target.value;
+                }
+            });
+            
+            // 国選択
+            document.getElementById('countrySelect').addEventListener('change', (e) => {
+                currentCountry = e.target.value;
+            });
+            
+            // タブ
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    loadRanking(tab.dataset.period);
+                });
+            });
+            
+            // オンラインカウンター
+            setInterval(() => {
+                const online = 200 + Math.floor(Math.random() * 500);
+                document.getElementById('statOnline').textContent = online;
+            }, 5000);
+        }
+        
+        // トースト
+        function showToast(message) {
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+        
+        // Firebase（簡易版）
+        async function initFirebase() {
+            try {
+                // Firebase設定をここに追加
+                console.log('Firebase接続中...');
+                
+                // デモ用のタイルを表示
+                setTimeout(() => {
+                    drawTile(35.6762, 139.6503, '#ff0000');
+                    drawTile(35.6772, 139.6513, '#00ff00');
+                    drawTile(35.6782, 139.6523, '#0000ff');
+                    document.getElementById('statTotal').textContent = '3';
+                }, 1000);
+                
+            } catch (error) {
+                console.log('Offline mode');
+            }
+        }
+        
+        function saveToFirebase(lat, lng, color) {
+            console.log('Saving tile:', { lat, lng, color, country: currentCountry });
+        }
+        
+        function loadRanking(period) {
+            // デモデータ
+            const demoRanking = [
+                { country: 'Japan', count: 1234 },
+                { country: 'United States', count: 987 },
+                { country: 'Korea', count: 654 }
+            ];
+            
+            const html = demoRanking.map((item, i) => 
+                `<li><span>${i + 1}. ${item.country}</span> <strong>${item.count}</strong></li>`
+            ).join('');
+            
+            document.getElementById('rankingList').innerHTML = html;
+        }
+        
+        // 初期化
+        window.addEventListener('DOMContentLoaded', () => {
+            console.log('TePlace起動中...');
+            initMap();
+            setupUI();
+            initFirebase();
+            loadRanking('today');
+            console.log('TePlace準備完了！');
+        });
+    </script>
 </body>
 </html>
