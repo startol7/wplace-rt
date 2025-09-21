@@ -700,6 +700,134 @@
             overflow: hidden;
         }
         
+        /* 観光地ポップアップ */
+        .location-popup {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 12px;
+            padding: 0;
+            width: 280px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        .location-popup .photo-container {
+            width: 100%;
+            height: 180px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .location-popup img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .location-popup .photo-placeholder {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+        }
+        
+        .location-popup .info {
+            padding: 12px;
+            color: #333;
+        }
+        
+        .location-popup h3 {
+            margin: 0 0 8px 0;
+            font-size: 18px;
+            font-weight: bold;
+            color: #1a1a2e;
+        }
+        
+        .location-popup .description {
+            font-size: 13px;
+            line-height: 1.4;
+            color: #666;
+            margin-bottom: 8px;
+        }
+        
+        .location-popup .tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+        
+        .location-popup .tag {
+            background: #667eea;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+        }
+        
+        /* マーカーアイコン */
+        .location-marker {
+            background: linear-gradient(135deg, #ff6b6b, #ff4757);
+            color: white;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .location-marker:hover {
+            transform: scale(1.2);
+        }
+        
+        /* 写真アップロードパネル */
+        .photo-upload-panel {
+            position: fixed;
+            top: 70px;
+            right: 10px;
+            background: rgba(15, 52, 96, 0.95);
+            border-radius: 10px;
+            padding: 15px;
+            width: 250px;
+            z-index: 1000;
+            display: none;
+        }
+        
+        .photo-upload-panel.active {
+            display: block;
+        }
+        
+        .photo-upload-panel h4 {
+            margin: 0 0 10px 0;
+            color: #ffd700;
+            font-size: 16px;
+        }
+        
+        .photo-upload-panel input[type="file"] {
+            width: 100%;
+            margin-bottom: 10px;
+        }
+        
+        .photo-upload-panel button {
+            width: 100%;
+            padding: 8px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        
+        .photo-upload-panel button:hover {
+            background: #764ba2;
+        }
+        
         .header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             padding: 10px 20px;
@@ -967,7 +1095,15 @@
                     <div class="stat">
                         <div class="stat-value" id="statTotal">0</div>
                         <div class="stat-label">Total</div>
-                    </div>
+                    <div class="panel">
+                <h3>📍 Add Location Photo</h3>
+                <button id="togglePhotoMode" style="width: 100%; padding: 8px; background: #667eea; color: white; border: none; border-radius: 5px; cursor: pointer;">
+                    Toggle Photo Mode
+                </button>
+                <div id="photoStatus" style="margin-top: 10px; font-size: 12px; color: #ffd700;">
+                    Click on map to add photos
+                </div>
+            </div>
                     <div class="stat">
                         <div class="stat-value" id="statMine">0</div>
                         <div class="stat-label">Yours</div>
@@ -1020,11 +1156,168 @@
         // グローバル変数
         let map = null;
         let tilesLayer = null;
+        let locationsLayer = null;
         let currentCountry = 'Japan';
         let currentColor = '#ff4444';
         let cooldownEnd = 0;
         let myTileCount = 0;
         let totalTileCount = 0;
+        let photoMode = false;
+        let userPhotos = {};
+        
+        // 東京の観光地データ
+        const touristLocations = [
+            {
+                id: 'shibuya-scramble',
+                name: '渋谷スクランブルスクエア',
+                lat: 35.6595,
+                lng: 139.7004,
+                description: '渋谷の新しいランドマーク。屋上展望台「SHIBUYA SKY」からの眺めは絶景！',
+                tags: ['展望台', '夜景', 'ショッピング'],
+                emoji: '🏢',
+                defaultPhoto: 'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=400&h=300&fit=crop'
+            },
+            {
+                id: 'sensoji',
+                name: '浅草寺',
+                lat: 35.7148,
+                lng: 139.7967,
+                description: '東京最古の寺院。雷門と仲見世通りが有名な観光スポット。',
+                tags: ['寺院', '歴史', '仲見世'],
+                emoji: '⛩️',
+                defaultPhoto: 'https://images.unsplash.com/photo-1545569341-9eb8b30979d9?w=400&h=300&fit=crop'
+            },
+            {
+                id: 'tokyo-tower',
+                name: '東京タワー',
+                lat: 35.6586,
+                lng: 139.7454,
+                description: '高さ333mの電波塔。東京のシンボル的存在。',
+                tags: ['展望台', 'ライトアップ', 'シンボル'],
+                emoji: '🗼',
+                defaultPhoto: 'https://images.unsplash.com/photo-1536098561742-ca998e48cbcc?w=400&h=300&fit=crop'
+            },
+            {
+                id: 'skytree',
+                name: '東京スカイツリー',
+                lat: 35.7100,
+                lng: 139.8107,
+                description: '高さ634mの世界一高い電波塔。展望デッキからの眺望は圧巻。',
+                tags: ['展望台', 'ショッピング', 'プラネタリウム'],
+                emoji: '🗼',
+                defaultPhoto: 'https://images.unsplash.com/photo-1508038118390-0ca2971a3e2f?w=400&h=300&fit=crop'
+            },
+            {
+                id: 'meiji-shrine',
+                name: '明治神宮',
+                lat: 35.6764,
+                lng: 139.6993,
+                description: '都心の緑豊かな神社。初詣の参拝者数日本一。',
+                tags: ['神社', '森', 'パワースポット'],
+                emoji: '⛩️',
+                defaultPhoto: 'https://images.unsplash.com/photo-1590559899731-a382839e5549?w=400&h=300&fit=crop'
+            },
+            {
+                id: 'tsukiji',
+                name: '築地場外市場',
+                lat: 35.6654,
+                lng: 139.7707,
+                description: '新鮮な海鮮と食べ歩きグルメが楽しめる市場。',
+                tags: ['グルメ', '海鮮', '朝市'],
+                emoji: '🍣',
+                defaultPhoto: 'https://images.unsplash.com/photo-1553621042-f6381c8f3139?w=400&h=300&fit=crop'
+            },
+            {
+                id: 'harajuku',
+                name: '原宿・竹下通り',
+                lat: 35.6702,
+                lng: 139.7026,
+                description: '若者文化の発信地。カワイイ文化とファッションの聖地。',
+                tags: ['ファッション', 'カフェ', 'ショッピング'],
+                emoji: '🛍️',
+                defaultPhoto: 'https://images.unsplash.com/photo-1542051841857-5f90071e7989?w=400&h=300&fit=crop'
+            },
+            {
+                id: 'ginza',
+                name: '銀座',
+                lat: 35.6717,
+                lng: 139.7642,
+                description: '高級ブランド店が立ち並ぶショッピング街。',
+                tags: ['ショッピング', '高級', 'グルメ'],
+                emoji: '💎',
+                defaultPhoto: 'https://images.unsplash.com/photo-1536098561742-ca998e48cbcc?w=400&h=300&fit=crop'
+            },
+            {
+                id: 'akihabara',
+                name: '秋葉原',
+                lat: 35.6984,
+                lng: 139.7731,
+                description: '電気街とオタク文化の中心地。アニメ・ゲーム・電子機器の聖地。',
+                tags: ['電気街', 'アニメ', 'ゲーム'],
+                emoji: '🎮',
+                defaultPhoto: 'https://images.unsplash.com/photo-1526481280693-3bfa7568e0f3?w=400&h=300&fit=crop'
+            },
+            {
+                id: 'roppongi-hills',
+                name: '六本木ヒルズ',
+                lat: 35.6604,
+                lng: 139.7292,
+                description: '展望台、美術館、ショッピングが楽しめる複合施設。',
+                tags: ['展望台', '美術館', 'ナイトライフ'],
+                emoji: '🌃',
+                defaultPhoto: 'https://images.unsplash.com/photo-1490806843957-31f4c9a91c65?w=400&h=300&fit=crop'
+            },
+            {
+                id: 'odaiba',
+                name: 'お台場',
+                lat: 35.6298,
+                lng: 139.7753,
+                description: 'レインボーブリッジとフジテレビが有名な観光エリア。',
+                tags: ['ビーチ', 'ショッピング', '夜景'],
+                emoji: '🌉',
+                defaultPhoto: 'https://images.unsplash.com/photo-1498036882173-b41c28a8ba34?w=400&h=300&fit=crop'
+            },
+            {
+                id: 'ueno',
+                name: '上野公園',
+                lat: 35.7146,
+                lng: 139.7746,
+                description: '動物園、美術館、博物館が集まる文化の森。春は桜の名所。',
+                tags: ['公園', '美術館', '動物園'],
+                emoji: '🌸',
+                defaultPhoto: 'https://images.unsplash.com/photo-1522383225653-ed111181a951?w=400&h=300&fit=crop'
+            },
+            {
+                id: 'shinjuku-gyoen',
+                name: '新宿御苑',
+                lat: 35.6852,
+                lng: 139.7100,
+                description: '都心のオアシス。日本庭園、フランス庭園、イギリス庭園が楽しめる。',
+                tags: ['公園', '庭園', '桜'],
+                emoji: '🌳',
+                defaultPhoto: 'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=400&h=300&fit=crop'
+            },
+            {
+                id: 'kichijoji',
+                name: '吉祥寺・井の頭公園',
+                lat: 35.7024,
+                lng: 139.5799,
+                description: '住みたい街ランキング常連。井の頭公園とハモニカ横丁が人気。',
+                tags: ['公園', 'カフェ', 'ショッピング'],
+                emoji: '🦆',
+                defaultPhoto: 'https://images.unsplash.com/photo-1568639484858-01a704bc054f?w=400&h=300&fit=crop'
+            },
+            {
+                id: 'imperial-palace',
+                name: '皇居',
+                lat: 35.6852,
+                lng: 139.7528,
+                description: '皇室の居住地。東御苑は一般公開されている美しい庭園。',
+                tags: ['歴史', '庭園', 'ランニング'],
+                emoji: '🏯',
+                defaultPhoto: 'https://images.unsplash.com/photo-1560799240-8353a61b0b47?w=400&h=300&fit=crop'
+            }
+        ];
         
         // タイルサイズ
         const TILE_SIZE = 0.0003;
@@ -1053,6 +1346,9 @@
                 // クリックイベントを設定
                 map.on('click', onMapClick);
                 
+                // 観光地マーカーを追加
+                addTouristLocations();
+                
                 console.log('Map initialized successfully');
                 
                 // 東京にピクセルアートを描画
@@ -1063,6 +1359,108 @@
             } catch (error) {
                 console.error('Error initializing map:', error);
             }
+        }
+        
+        // 観光地マーカーを追加
+        function addTouristLocations() {
+            locationsLayer = L.layerGroup().addTo(map);
+            
+            touristLocations.forEach(location => {
+                // カスタムアイコンを作成
+                const icon = L.divIcon({
+                    html: `<div class="location-marker">${location.emoji}</div>`,
+                    className: 'custom-div-icon',
+                    iconSize: [36, 36],
+                    iconAnchor: [18, 18]
+                });
+                
+                // マーカーを作成
+                const marker = L.marker([location.lat, location.lng], { icon })
+                    .addTo(locationsLayer);
+                
+                // ポップアップコンテンツを作成
+                const popupContent = createLocationPopup(location);
+                
+                // ホバーでポップアップ表示
+                marker.bindPopup(popupContent, {
+                    maxWidth: 280,
+                    className: 'location-popup',
+                    closeButton: false,
+                    autoClose: false
+                });
+                
+                // ホバーイベント
+                marker.on('mouseover', function() {
+                    this.openPopup();
+                });
+                
+                marker.on('mouseout', function() {
+                    setTimeout(() => {
+                        this.closePopup();
+                    }, 500);
+                });
+                
+                // クリックでも表示
+                marker.on('click', function(e) {
+                    if (photoMode) {
+                        // 写真モードの場合は写真をアップロード
+                        uploadPhotoForLocation(location.id, e);
+                    } else {
+                        this.openPopup();
+                    }
+                });
+            });
+        }
+        
+        // ロケーションポップアップを作成
+        function createLocationPopup(location) {
+            const userPhoto = userPhotos[location.id];
+            const photoUrl = userPhoto || location.defaultPhoto;
+            
+            const html = `
+                <div class="photo-container">
+                    ${photoUrl ? 
+                        `<img src="${photoUrl}" alt="${location.name}" onerror="this.parentElement.innerHTML='<div class=\\'photo-placeholder\\'>${location.emoji}</div>'">` :
+                        `<div class="photo-placeholder">${location.emoji}</div>`
+                    }
+                </div>
+                <div class="info">
+                    <h3>${location.name}</h3>
+                    <p class="description">${location.description}</p>
+                    <div class="tags">
+                        ${location.tags.map(tag => `<span class="tag">${tag}</span>`).join('')}
+                    </div>
+                </div>
+            `;
+            
+            return html;
+        }
+        
+        // 写真をアップロード
+        function uploadPhotoForLocation(locationId, event) {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/*';
+            
+            input.onchange = function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        userPhotos[locationId] = e.target.result;
+                        localStorage.setItem('userPhotos', JSON.stringify(userPhotos));
+                        
+                        // マーカーを更新
+                        locationsLayer.clearLayers();
+                        addTouristLocations();
+                        
+                        showToast('Photo uploaded successfully!');
+                    };
+                    reader.readAsDataURL(file);
+                }
+            };
+            
+            input.click();
         }
         
         // タイル描画
@@ -1424,6 +1822,33 @@
                     loadRanking(tab.dataset.period);
                 });
             });
+            
+            // 写真モードトグル
+            const toggleBtn = document.getElementById('togglePhotoMode');
+            const statusText = document.getElementById('photoStatus');
+            
+            if (toggleBtn) {
+                toggleBtn.addEventListener('click', () => {
+                    photoMode = !photoMode;
+                    if (photoMode) {
+                        toggleBtn.style.background = '#ff4757';
+                        toggleBtn.textContent = 'Exit Photo Mode';
+                        statusText.textContent = 'Click on location markers to upload photos';
+                        statusText.style.color = '#ff6b6b';
+                    } else {
+                        toggleBtn.style.background = '#667eea';
+                        toggleBtn.textContent = 'Toggle Photo Mode';
+                        statusText.textContent = 'Hover over markers to see photos';
+                        statusText.style.color = '#ffd700';
+                    }
+                });
+            }
+            
+            // 保存された写真を読み込み
+            const savedPhotos = localStorage.getItem('userPhotos');
+            if (savedPhotos) {
+                userPhotos = JSON.parse(savedPhotos);
+            }
             
             // オンラインカウンター更新
             updateOnlineCount();
