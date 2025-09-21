@@ -436,6 +436,31 @@
                     Hover over markers to see photos
                 </div>
             </div>
+            
+            <div class="panel">
+                <h3>➕ Add Custom Location</h3>
+                <input type="text" id="customLocationName" placeholder="Location name (e.g., Odaiba)" 
+                       style="width: 100%; padding: 6px; margin-bottom: 8px; background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.3); border-radius: 4px;">
+                
+                <input type="text" id="customLocationDesc" placeholder="Description" 
+                       style="width: 100%; padding: 6px; margin-bottom: 8px; background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.3); border-radius: 4px;">
+                
+                <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+                    <input type="text" id="customLocationEmoji" placeholder="Emoji 🌉" maxlength="2"
+                           style="width: 60px; padding: 6px; background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.3); border-radius: 4px; text-align: center; font-size: 20px;">
+                    
+                    <input type="text" id="customLocationTags" placeholder="Tags (comma separated)" 
+                           style="flex: 1; padding: 6px; background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.3); border-radius: 4px;">
+                </div>
+                
+                <button id="addLocationMode" style="width: 100%; padding: 8px; background: #22c55e; color: white; border: none; border-radius: 5px; cursor: pointer;">
+                    Click Map to Place Marker
+                </button>
+                
+                <div id="customLocationsList" style="margin-top: 10px; max-height: 150px; overflow-y: auto;">
+                    <!-- Custom locations will appear here -->
+                </div>
+            </div>
         </div>
     </div>
     
@@ -455,7 +480,9 @@
         let myTileCount = 0;
         let totalTileCount = 0;
         let photoMode = false;
+        let addLocationMode = false;
         let userPhotos = {};
+        let customLocations = [];
         
         const TILE_SIZE = 0.0005;
         
@@ -547,9 +574,18 @@
         function addTouristLocations() {
             locationsLayer = L.layerGroup().addTo(map);
             
-            touristLocations.forEach(location => {
+            // Load custom locations from localStorage
+            const savedCustomLocations = localStorage.getItem('customLocations');
+            if (savedCustomLocations) {
+                customLocations = JSON.parse(savedCustomLocations);
+            }
+            
+            // Combine default and custom locations
+            const allLocations = [...touristLocations, ...customLocations];
+            
+            allLocations.forEach(location => {
                 const icon = L.divIcon({
-                    html: `<div class="location-marker">${location.emoji}</div>`,
+                    html: `<div class="location-marker" style="${location.isCustom ? 'background: linear-gradient(135deg, #22c55e, #16a34a);' : ''}">${location.emoji}</div>`,
                     className: 'custom-div-icon',
                     iconSize: [36, 36],
                     iconAnchor: [18, 18]
@@ -585,25 +621,128 @@
                     }
                 });
             });
+            
+            updateCustomLocationsList();
         }
         
-        // Create location popup
+        // Create location popup with delete option for custom locations
         function createLocationPopup(location) {
             const userPhoto = userPhotos[location.id];
             const photoUrl = userPhoto || location.defaultPhoto;
             
+            let deleteButton = '';
+            if (location.isCustom) {
+                deleteButton = `
+                    <button onclick="deleteCustomLocation('${location.id}')" 
+                            style="position: absolute; top: 5px; right: 5px; background: #ff4757; color: white; border: none; border-radius: 50%; width: 30px; height: 30px; cursor: pointer; font-size: 16px;">
+                        ×
+                    </button>
+                `;
+            }
+            
             return `
-                <div class="photo-container">
-                    <img src="${photoUrl}" alt="${location.name}" onerror="this.parentElement.innerHTML='<div class=\\'photo-placeholder\\'>${location.emoji}</div>'">
+                <div class="photo-container" style="position: relative;">
+                    ${deleteButton}
+                    ${photoUrl ? 
+                        `<img src="${photoUrl}" alt="${location.name}" onerror="this.parentElement.innerHTML='<div class=\\'photo-placeholder\\'>${location.emoji}</div>'">` :
+                        `<div class="photo-placeholder">${location.emoji}</div>`
+                    }
                 </div>
                 <div class="info">
-                    <h3>${location.name}</h3>
+                    <h3>${location.name} ${location.isCustom ? '<span style="font-size: 12px; color: #22c55e;">(Custom)</span>' : ''}</h3>
                     <p class="description">${location.description}</p>
                     <div class="tags">
                         ${location.tags.map(tag => `<span class="tag">${tag}</span>`).join('')}
                     </div>
                 </div>
             `;
+        }
+        
+        // Add custom location
+        function addCustomLocation(lat, lng) {
+            const name = document.getElementById('customLocationName').value;
+            const desc = document.getElementById('customLocationDesc').value;
+            const emoji = document.getElementById('customLocationEmoji').value || '📍';
+            const tags = document.getElementById('customLocationTags').value.split(',').map(t => t.trim()).filter(t => t);
+            
+            if (!name) {
+                showToast('Please enter a location name');
+                return;
+            }
+            
+            const customLocation = {
+                id: 'custom-' + Date.now(),
+                name: name,
+                lat: lat,
+                lng: lng,
+                description: desc || 'Custom location',
+                tags: tags.length > 0 ? tags : ['Custom'],
+                emoji: emoji,
+                defaultPhoto: null,
+                isCustom: true
+            };
+            
+            customLocations.push(customLocation);
+            localStorage.setItem('customLocations', JSON.stringify(customLocations));
+            
+            // Refresh markers
+            locationsLayer.clearLayers();
+            addTouristLocations();
+            
+            // Clear form
+            document.getElementById('customLocationName').value = '';
+            document.getElementById('customLocationDesc').value = '';
+            document.getElementById('customLocationEmoji').value = '';
+            document.getElementById('customLocationTags').value = '';
+            
+            // Exit add location mode
+            addLocationMode = false;
+            const addBtn = document.getElementById('addLocationMode');
+            addBtn.style.background = '#22c55e';
+            addBtn.textContent = 'Click Map to Place Marker';
+            
+            showToast('Custom location added!');
+        }
+        
+        // Delete custom location
+        window.deleteCustomLocation = function(locationId) {
+            customLocations = customLocations.filter(loc => loc.id !== locationId);
+            localStorage.setItem('customLocations', JSON.stringify(customLocations));
+            
+            // Remove associated photo
+            delete userPhotos[locationId];
+            localStorage.setItem('userPhotos', JSON.stringify(userPhotos));
+            
+            // Refresh markers
+            locationsLayer.clearLayers();
+            addTouristLocations();
+            
+            showToast('Location deleted');
+        }
+        
+        // Update custom locations list
+        function updateCustomLocationsList() {
+            const listContainer = document.getElementById('customLocationsList');
+            if (!listContainer) return;
+            
+            if (customLocations.length === 0) {
+                listContainer.innerHTML = '<div style="color: #999; font-size: 12px;">No custom locations yet</div>';
+                return;
+            }
+            
+            const html = customLocations.map(loc => `
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                    <span style="font-size: 14px;">
+                        ${loc.emoji} ${loc.name}
+                    </span>
+                    <button onclick="deleteCustomLocation('${loc.id}')" 
+                            style="background: #ff4757; color: white; border: none; border-radius: 3px; padding: 2px 8px; font-size: 12px; cursor: pointer;">
+                        Delete
+                    </button>
+                </div>
+            `).join('');
+            
+            listContainer.innerHTML = html;
         }
         
         // Upload photo
@@ -632,261 +771,35 @@
             input.click();
         }
         
-       // 東京にピクセルアートを描画
-        function drawTokyoPixelArt() {
-            // 大きな東京タワー（詳細版）
-            const tokyoTowerLarge = [
-                ['', '', '', '', '#ff0000', '', '', '', ''],
-                ['', '', '', '#ff0000', '#ff0000', '#ff0000', '', '', ''],
-                ['', '', '#ffffff', '#ff0000', '#ff0000', '#ff0000', '#ffffff', '', ''],
-                ['', '#ff0000', '#ffffff', '#ff0000', '#ff0000', '#ff0000', '#ffffff', '#ff0000', ''],
-                ['', '', '#ffffff', '#ff0000', '#ff0000', '#ff0000', '#ffffff', '', ''],
-                ['', '', '#ff0000', '#ffffff', '#ff0000', '#ffffff', '#ff0000', '', ''],
-                ['', '#ff0000', '#ff0000', '#ffffff', '#ff0000', '#ffffff', '#ff0000', '#ff0000', ''],
-                ['#ff0000', '#ff0000', '#ff0000', '#ffffff', '#ff0000', '#ffffff', '#ff0000', '#ff0000', '#ff0000'],
-                ['', '', '#ff0000', '#ff0000', '#ff0000', '#ff0000', '#ff0000', '', ''],
-                ['', '#ff0000', '#ff0000', '#ff0000', '#ff0000', '#ff0000', '#ff0000', '#ff0000', ''],
-                ['#ff0000', '#ff0000', '#ff0000', '#ff0000', '#ff0000', '#ff0000', '#ff0000', '#ff0000', '#ff0000']
+        // Draw simple pixel art
+        function drawSimpleArt() {
+            // Tokyo Tower
+            const tokyoTower = [
+                ['', '#ff0000', ''],
+                ['#ff0000', '#ff0000', '#ff0000'],
+                ['', '#ff0000', ''],
+                ['#ff0000', '#ff0000', '#ff0000']
             ];
-            drawPattern(35.6586, 139.7454, tokyoTowerLarge);
+            drawPattern(35.6586, 139.7454, tokyoTower);
             
-            // 詳細な富士山
-            const mtFujiDetailed = [
-                ['', '', '', '', '', '#ffffff', '', '', '', '', ''],
-                ['', '', '', '', '#ffffff', '#ffffff', '#ffffff', '', '', '', ''],
-                ['', '', '', '#ffffff', '#ffffff', '#87ceeb', '#ffffff', '#ffffff', '', '', ''],
-                ['', '', '#ffffff', '#ffffff', '#87ceeb', '#87ceeb', '#87ceeb', '#ffffff', '#ffffff', '', ''],
-                ['', '#4169e1', '#ffffff', '#87ceeb', '#87ceeb', '#87ceeb', '#87ceeb', '#87ceeb', '#ffffff', '#4169e1', ''],
-                ['#4169e1', '#4169e1', '#4169e1', '#87ceeb', '#87ceeb', '#87ceeb', '#87ceeb', '#87ceeb', '#4169e1', '#4169e1', '#4169e1'],
-                ['#4169e1', '#4169e1', '#4169e1', '#4169e1', '#4169e1', '#4169e1', '#4169e1', '#4169e1', '#4169e1', '#4169e1', '#4169e1'],
-                ['#228b22', '#228b22', '#4169e1', '#4169e1', '#4169e1', '#4169e1', '#4169e1', '#4169e1', '#4169e1', '#228b22', '#228b22'],
-                ['#228b22', '#228b22', '#228b22', '#228b22', '#228b22', '#228b22', '#228b22', '#228b22', '#228b22', '#228b22', '#228b22']
+            // Mt Fuji
+            const fuji = [
+                ['', '#ffffff', ''],
+                ['#ffffff', '#ffffff', '#ffffff'],
+                ['#4169e1', '#4169e1', '#4169e1']
             ];
-            drawPattern(35.6700, 139.7000, mtFujiDetailed);
+            drawPattern(35.6700, 139.7000, fuji);
             
-            // 大きな桜の木
-            const sakuraTree = [
-                ['', '', '#ffb7c5', '#ffb7c5', '#ffb7c5', '#ffb7c5', '#ffb7c5', '', ''],
-                ['', '#ffb7c5', '#ff69b4', '#ffb7c5', '#ff69b4', '#ffb7c5', '#ff69b4', '#ffb7c5', ''],
-                ['#ffb7c5', '#ff69b4', '#ffb7c5', '#ff69b4', '#ffb7c5', '#ff69b4', '#ffb7c5', '#ff69b4', '#ffb7c5'],
-                ['#ffb7c5', '#ffb7c5', '#ff69b4', '#ffb7c5', '#ff69b4', '#ffb7c5', '#ff69b4', '#ffb7c5', '#ffb7c5'],
-                ['', '#ffb7c5', '#ffb7c5', '#ff69b4', '#ffb7c5', '#ff69b4', '#ffb7c5', '#ffb7c5', ''],
-                ['', '', '', '', '#8b4513', '', '', '', ''],
-                ['', '', '', '', '#8b4513', '', '', '', ''],
-                ['', '', '', '#8b4513', '#8b4513', '#8b4513', '', '', ''],
-                ['', '', '#8b4513', '#8b4513', '#8b4513', '#8b4513', '#8b4513', '', ''],
-                ['#228b22', '#228b22', '#228b22', '#8b4513', '#8b4513', '#8b4513', '#228b22', '#228b22', '#228b22']
+            // Sakura
+            const sakura = [
+                ['#ffb7c5', '#ffb7c5', '#ffb7c5'],
+                ['', '#8b4513', ''],
+                ['', '#8b4513', '']
             ];
-            drawPattern(35.6800, 139.7600, sakuraTree);
+            drawPattern(35.6800, 139.7600, sakura);
             
-            // 詳細なスカイツリー
-            const skyTreeDetailed = [
-                ['', '', '', '#87ceeb', '', '', ''],
-                ['', '', '#87ceeb', '#87ceeb', '#87ceeb', '', ''],
-                ['', '#87ceeb', '#ffffff', '#87ceeb', '#ffffff', '#87ceeb', ''],
-                ['', '#87ceeb', '#87ceeb', '#87ceeb', '#87ceeb', '#87ceeb', ''],
-                ['', '', '#708090', '#708090', '#708090', '', ''],
-                ['', '', '#708090', '#708090', '#708090', '', ''],
-                ['', '#708090', '#708090', '#708090', '#708090', '#708090', ''],
-                ['', '#708090', '#ffffff', '#708090', '#ffffff', '#708090', ''],
-                ['#708090', '#708090', '#708090', '#708090', '#708090', '#708090', '#708090'],
-                ['#708090', '#708090', '#708090', '#708090', '#708090', '#708090', '#708090']
-            ];
-            drawPattern(35.7100, 139.8107, skyTreeDetailed);
-            
-            // 寿司セット
-            const sushiSet = [
-                ['#ff6347', '#ff6347', '#ff6347', '', '#ffa500', '#ffa500', '', '#ff69b4', '#ff69b4'],
-                ['#ffffff', '#ffffff', '#ffffff', '', '#ffffff', '#ffffff', '', '#ffffff', '#ffffff'],
-                ['', '', '', '', '', '', '', '', ''],
-                ['#8b4513', '#8b4513', '#8b4513', '#8b4513', '#8b4513', '#8b4513', '#8b4513', '#8b4513', '#8b4513']
-            ];
-            drawPattern(35.6500, 139.7300, sushiSet);
-            
-            // ラーメン丼（詳細）
-            const ramenBowl = [
-                ['', '#8b4513', '#8b4513', '#8b4513', '#8b4513', '#8b4513', '#8b4513', ''],
-                ['#8b4513', '#ffd700', '#ffd700', '#ffd700', '#ffd700', '#ffd700', '#ffd700', '#8b4513'],
-                ['#8b4513', '#ffd700', '#ff6347', '#228b22', '#ffffff', '#ffa500', '#ffd700', '#8b4513'],
-                ['#8b4513', '#ffd700', '#ffd700', '#ff69b4', '#ffd700', '#ffd700', '#ffd700', '#8b4513'],
-                ['', '#8b4513', '#8b4513', '#8b4513', '#8b4513', '#8b4513', '#8b4513', '']
-            ];
-            drawPattern(35.6900, 139.7100, ramenBowl);
-            
-            // 大きな招き猫
-            const manekinekoBig = [
-                ['', '#ffffff', '', '', '', '#ffffff', ''],
-                ['#ffffff', '#ffffff', '#ffffff', '#ffffff', '#ffffff', '#ffffff', '#ffffff'],
-                ['#ffffff', '#000000', '#ffffff', '#ffffff', '#ffffff', '#000000', '#ffffff'],
-                ['#ffffff', '#ffffff', '#ffffff', '#ff69b4', '#ffffff', '#ffffff', '#ffffff'],
-                ['#ffffff', '#ffffff', '#ff0000', '#ff0000', '#ff0000', '#ffffff', '#ffffff'],
-                ['', '#ffffff', '#ffffff', '#ffffff', '#ffffff', '#ffffff', ''],
-                ['', '#ffffff', '', '#ffd700', '', '#ffffff', ''],
-                ['', '#ffffff', '#ffd700', '#ffd700', '#ffd700', '#ffffff', '']
-            ];
-            drawPattern(35.6600, 139.7700, manekinekoBig);
-            
-            // 新幹線N700系（詳細）
-            const shinkansenN700 = [
-                ['', '', '', '#4169e1', '#4169e1', '#4169e1', '#4169e1', '#4169e1', ''],
-                ['', '', '#4169e1', '#ffffff', '#ffffff', '#ffffff', '#ffffff', '#ffffff', '#4169e1'],
-                ['', '#4169e1', '#ffffff', '#4169e1', '#4169e1', '#4169e1', '#4169e1', '#ffffff', '#ffffff'],
-                ['#4169e1', '#ffffff', '#ffffff', '#000000', '#ffffff', '#000000', '#ffffff', '#ffffff', '#ffffff'],
-                ['#708090', '#708090', '#000000', '#000000', '#000000', '#000000', '#000000', '#000000', '#000000']
-            ];
-            drawPattern(35.6850, 139.7400, shinkansenN700);
-            
-            // 大きな鳥居
-            const toriiBig = [
-                ['#ff0000', '#ff0000', '#ff0000', '#ff0000', '#ff0000', '#ff0000', '#ff0000', '#ff0000', '#ff0000'],
-                ['#ff0000', '#ff0000', '#ff0000', '#ff0000', '#ff0000', '#ff0000', '#ff0000', '#ff0000', '#ff0000'],
-                ['', '', '#ff0000', '', '', '', '#ff0000', '', ''],
-                ['', '', '#ff0000', '', '', '', '#ff0000', '', ''],
-                ['', '', '#ff0000', '#ff0000', '#ff0000', '#ff0000', '#ff0000', '', ''],
-                ['', '', '#ff0000', '', '', '', '#ff0000', '', ''],
-                ['', '', '#ff0000', '', '', '', '#ff0000', '', ''],
-                ['', '', '#ff0000', '', '', '', '#ff0000', '', '']
-            ];
-            drawPattern(35.6750, 139.7800, toriiBig);
-            
-            // 日本の城（詳細）
-            const japaneseCastle = [
-                ['', '', '', '', '#ffffff', '', '', '', ''],
-                ['', '', '', '#ffffff', '#ffffff', '#ffffff', '', '', ''],
-                ['', '', '#ffffff', '#708090', '#ffffff', '#708090', '#ffffff', '', ''],
-                ['', '#ffffff', '#708090', '#ffffff', '#ffffff', '#ffffff', '#708090', '#ffffff', ''],
-                ['#ffffff', '#708090', '#ffffff', '#000000', '#ffffff', '#000000', '#ffffff', '#708090', '#ffffff'],
-                ['#708090', '#708090', '#708090', '#708090', '#000000', '#708090', '#708090', '#708090', '#708090'],
-                ['#708090', '#708090', '#708090', '#708090', '#708090', '#708090', '#708090', '#708090', '#708090'],
-                ['#696969', '#696969', '#696969', '#696969', '#696969', '#696969', '#696969', '#696969', '#696969']
-            ];
-            drawPattern(35.6550, 139.7550, japaneseCastle);
-            
-            // 雷門
-            const kaminarimon = [
-                ['#8b4513', '#8b4513', '#8b4513', '#8b4513', '#8b4513', '#8b4513', '#8b4513'],
-                ['#8b4513', '', '', '', '', '', '#8b4513'],
-                ['#8b4513', '', '#ff0000', '#ff0000', '#ff0000', '', '#8b4513'],
-                ['#8b4513', '', '#ff0000', '#ffd700', '#ff0000', '', '#8b4513'],
-                ['#8b4513', '', '#ff0000', '#ff0000', '#ff0000', '', '#8b4513'],
-                ['#8b4513', '', '', '', '', '', '#8b4513'],
-                ['#8b4513', '', '', '', '', '', '#8b4513']
-            ];
-            drawPattern(35.7120, 139.7950, kaminarimon);
-            
-            // 折り紙の鶴
-            const origamiCrane = [
-                ['', '', '#ff0000', '', '', '', ''],
-                ['', '#ff0000', '#ff0000', '#ff0000', '', '', ''],
-                ['#ff0000', '#ffffff', '#ff0000', '#ffffff', '#ff0000', '', ''],
-                ['', '#ff0000', '#ff0000', '#ff0000', '#ff0000', '#ff0000', ''],
-                ['', '', '#ff0000', '#ff0000', '#ff0000', '', '#ff0000'],
-                ['', '', '', '#ff0000', '', '', '']
-            ];
-            drawPattern(35.6650, 139.7650, origamiCrane);
-            
-            // 太鼓
-            const taiko = [
-                ['', '#8b4513', '#8b4513', '#8b4513', '#8b4513', '#8b4513', ''],
-                ['#8b4513', '#ff0000', '#ff0000', '#ff0000', '#ff0000', '#ff0000', '#8b4513'],
-                ['#8b4513', '#ff0000', '#ffffff', '#ff0000', '#ffffff', '#ff0000', '#8b4513'],
-                ['#8b4513', '#ff0000', '#ff0000', '#ff0000', '#ff0000', '#ff0000', '#8b4513'],
-                ['', '#8b4513', '#8b4513', '#8b4513', '#8b4513', '#8b4513', '']
-            ];
-            drawPattern(35.6700, 139.7200, taiko);
-            
-            // 相撲レスラー
-            const sumoWrestler = [
-                ['', '', '#000000', '#000000', '#000000', '', ''],
-                ['', '#fdbcb4', '#fdbcb4', '#fdbcb4', '#fdbcb4', '#fdbcb4', ''],
-                ['', '#fdbcb4', '#000000', '#fdbcb4', '#000000', '#fdbcb4', ''],
-                ['', '#fdbcb4', '#fdbcb4', '#fdbcb4', '#fdbcb4', '#fdbcb4', ''],
-                ['#fdbcb4', '#fdbcb4', '#4169e1', '#4169e1', '#4169e1', '#fdbcb4', '#fdbcb4'],
-                ['#fdbcb4', '#fdbcb4', '#4169e1', '#4169e1', '#4169e1', '#fdbcb4', '#fdbcb4'],
-                ['', '#fdbcb4', '#fdbcb4', '', '#fdbcb4', '#fdbcb4', ''],
-                ['', '#fdbcb4', '#fdbcb4', '', '#fdbcb4', '#fdbcb4', '']
-            ];
-            drawPattern(35.6950, 139.7850, sumoWrestler);
-            
-            // だるま
-            const daruma = [
-                ['', '#ff0000', '#ff0000', '#ff0000', ''],
-                ['#ff0000', '#ff0000', '#ff0000', '#ff0000', '#ff0000'],
-                ['#ff0000', '#ffffff', '#ff0000', '#ffffff', '#ff0000'],
-                ['#ff0000', '#000000', '#ff0000', '#000000', '#ff0000'],
-                ['#ff0000', '#ff0000', '#ffd700', '#ff0000', '#ff0000'],
-                ['#ff0000', '#ff0000', '#ff0000', '#ff0000', '#ff0000'],
-                ['', '#ff0000', '#ff0000', '#ff0000', '']
-            ];
-            drawPattern(35.6820, 139.7320, daruma);
-            
-            // 刀
-            const katana = [
-                ['', '', '', '', '', '', '#708090'],
-                ['', '', '', '', '', '#708090', '#c0c0c0'],
-                ['', '', '', '', '#708090', '#c0c0c0', ''],
-                ['', '', '', '#708090', '#c0c0c0', '', ''],
-                ['', '', '#708090', '#c0c0c0', '', '', ''],
-                ['#8b4513', '#8b4513', '#c0c0c0', '', '', '', ''],
-                ['#8b4513', '#8b4513', '', '', '', '', ''],
-                ['#ffd700', '#8b4513', '', '', '', '', '']
-            ];
-            drawPattern(35.6880, 139.7680, katana);
-            
-            // 忍者
-            const ninja = [
-                ['', '#000000', '#000000', '#000000', ''],
-                ['', '#000000', '#000000', '#000000', ''],
-                ['', '#fdbcb4', '#fdbcb4', '#fdbcb4', ''],
-                ['', '#000000', '#fdbcb4', '#000000', ''],
-                ['#000000', '#000000', '#000000', '#000000', '#000000'],
-                ['', '#000000', '#000000', '#000000', ''],
-                ['', '#000000', '', '#000000', ''],
-                ['#000000', '#000000', '', '#000000', '#000000']
-            ];
-            drawPattern(35.6780, 139.7480, ninja);
-            
-            // 芸者
-            const geisha = [
-                ['', '#000000', '#000000', '#000000', ''],
-                ['#000000', '#ff0000', '#000000', '#ff0000', '#000000'],
-                ['', '#ffffff', '#ffffff', '#ffffff', ''],
-                ['', '#ffffff', '#ff69b4', '#ffffff', ''],
-                ['', '#ffffff', '#ff0000', '#ffffff', ''],
-                ['#ff69b4', '#ff69b4', '#ff69b4', '#ff69b4', '#ff69b4'],
-                ['#ff69b4', '#ffd700', '#ff69b4', '#ffd700', '#ff69b4'],
-                ['', '#ff69b4', '#ff69b4', '#ff69b4', '']
-            ];
-            drawPattern(35.6920, 139.7580, geisha);
-            
-            // 盆栽
-            const bonsai = [
-                ['', '', '#228b22', '#228b22', '#228b22', '', ''],
-                ['', '#228b22', '#228b22', '#228b22', '#228b22', '#228b22', ''],
-                ['#228b22', '#228b22', '#228b22', '#228b22', '#228b22', '#228b22', '#228b22'],
-                ['', '#228b22', '#228b22', '#228b22', '#228b22', '#228b22', ''],
-                ['', '', '#8b4513', '#8b4513', '#8b4513', '', ''],
-                ['', '', '', '#8b4513', '', '', ''],
-                ['#8b4513', '#8b4513', '#8b4513', '#8b4513', '#8b4513', '#8b4513', '#8b4513'],
-                ['#8b4513', '#8b4513', '#8b4513', '#8b4513', '#8b4513', '#8b4513', '#8b4513']
-            ];
-            drawPattern(35.6980, 139.7280, bonsai);
-            
-            totalTileCount = 500; // 初期タイル数
+            totalTileCount = 100;
             document.getElementById('statTotal').textContent = totalTileCount;
-        }
-        
-        // パターン描画ヘルパー
-        function drawPattern(baseLat, baseLng, pattern) {
-            pattern.forEach((row, y) => {
-                row.forEach((color, x) => {
-                    if (color && color !== '') {
-                        const lat = baseLat - (y * TILE_SIZE);
-                        const lng = baseLng + (x * TILE_SIZE);
-                        drawTile(lat, lng, color, 0.9);
-                    }
-                });
-            });
         }
         
         // Draw pattern helper
@@ -922,6 +835,13 @@
         
         // Map click handler
         function onMapClick(e) {
+            // Check if we're in add location mode
+            if (addLocationMode) {
+                addCustomLocation(e.latlng.lat, e.latlng.lng);
+                return;
+            }
+            
+            // Normal tile placement
             if (Date.now() < cooldownEnd) {
                 const remaining = Math.ceil((cooldownEnd - Date.now()) / 1000);
                 showToast(`Wait ${remaining} seconds!`);
@@ -1013,6 +933,36 @@
                     }
                 });
             }
+            
+            // Add location mode button
+            const addLocationBtn = document.getElementById('addLocationMode');
+            if (addLocationBtn) {
+                addLocationBtn.addEventListener('click', () => {
+                    addLocationMode = !addLocationMode;
+                    if (addLocationMode) {
+                        // Disable photo mode if active
+                        photoMode = false;
+                        toggleBtn.style.background = '#667eea';
+                        toggleBtn.textContent = 'Toggle Photo Mode';
+                        statusText.textContent = 'Hover over markers to see photos';
+                        statusText.style.color = '#ffd700';
+                        
+                        // Update add location button
+                        addLocationBtn.style.background = '#ff4757';
+                        addLocationBtn.textContent = 'Click map to place marker here';
+                        
+                        // Change cursor
+                        document.getElementById('map').style.cursor = 'crosshair';
+                    } else {
+                        addLocationBtn.style.background = '#22c55e';
+                        addLocationBtn.textContent = 'Click Map to Place Marker';
+                        document.getElementById('map').style.cursor = '';
+                    }
+                });
+            }
+            
+            // Load custom locations on startup
+            updateCustomLocationsList();
             
             const savedPhotos = localStorage.getItem('userPhotos');
             if (savedPhotos) {
