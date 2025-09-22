@@ -1,498 +1,113 @@
-// Star rating setup
-        document.querySelectorAll('.star').forEach(star => {
-            star.addEventListener('click', function() {
-                selectedRating = parseInt(this.dataset.rating);
-                updateStarDisplay();
-            });
-        });
-        
-        function updateStarDisplay() {
-            document.querySelectorAll('.star').forEach((star, index) => {
-                if (index < selectedRating) {
-                    star.classList.add('active');
-                } else {
-                    star.classList.remove('active');
-                }
-            });
-        }
-        
-        // Update top rated list
-        function updateTopRated() {
-            const sorted = [...places]
-                .filter(p => p.reviews && p.reviews.length > 0)
-                .sort((a, b) => {
-                    const avgA = a.reviews.reduce((sum, r) => sum + r.rating, 0) / a.reviews.length;
-                    const avgB = b.reviews.reduce((sum, r) => sum + r.rating, 0) / b.reviews.length;
-                    return avgB - avgA;
-                })
-                .slice(0, 5);
-            
-            const html = sorted.map(place => {
-                const avgRating = (place.reviews.reduce((sum, r) => sum + r.rating, 0) / place.reviews.length).toFixed(1);
-                return `
-                    <div class="review-item">
-                        <div class="review-header">
-                            <span class="review-author">${categoryEmojis[place.category]} ${place.name}</span>
-                            <span class="review-rating">${'⭐'.repeat(Math.round(avgRating))}</span>
-                        </div>
-                        <div class="review-text">${avgRating}/5.0 (${place.reviews.length} reviews)</div>
-                    </div>
-                `;
-            }).join('');
-            
-            const topRatedList = document.getElementById('topRatedList');
-            const mobileTopRated = document.getElementById('mobileTopRated');
-            
-            if (topRatedList) topRatedList.innerHTML = html || '<p style="color: #999;">No reviews yet</p>';
-            if (mobileTopRated) mobileTopRated.innerHTML = html || '<p style="color: #999;">No reviews yet</p>';
-        }
-        
-        // Update recent reviews
-        function updateRecentReviews() {
-            const allReviews = [];
-            places.forEach(place => {
-                if (place.reviews) {
-                    place.reviews.forEach(review => {
-                        allReviews.push({
-                            ...review,
-                            placeName: place.name,
-                            placeCategory: place.category
-                        });
-                    });
-                }
-            });
-            
-            const recent = allReviews
-                .sort((a, b) => new Date(b.date) - new Date(a.date))
-                .slice(0, 5);
-            
-            const html = recent.map(review => `
-                <div class="review-item">
-                    <div class="review-header">
-                        <span class="review-author">${categoryEmojis[review.placeCategory]} ${review.placeName}</span>
-                    </div>
-                    <div class="review-rating">${'⭐'.repeat(review.rating)}</div>
-                    <div class="review-text">"${review.text}"</div>
-                    <div class="review-date">- ${review.author}</div>
-                </div>
-            `).join('');
-            
-            const recentReviewsList = document.getElementById('recentReviewsList');
-            const mobileRecentReviews = document.getElementById('mobileRecentReviews');
-            
-            if (recentReviewsList) recentReviewsList.innerHTML = html || '<p style="color: #999;">No reviews yet</p>';
-            if (mobileRecentReviews) mobileRecentReviews.innerHTML = html || '<p style="color: #999;">No reviews yet</p>';
-        }
-        
-        // Show reviews for a place
-        window.showReviews = function(placeId) {
-            const place = places.find(p => p.id === placeId);
-            if (!place || !place.reviews || place.reviews.length === 0) {
-                showToast('No reviews yet');
-                return;
-            }
-            
-            const reviewsHtml = place.reviews.map(review => `
-                <div class="review-item">
-                    <div class="review-header">
-                        <span class="review-author">${review.author}</span>
-                        <span class="review-rating">${'⭐'.repeat(review.rating)}</span>
-                    </div>
-                    <div class="review-text">${review.text}</div>
-                    <div class="review-date">${new Date(review.date).toLocaleDateString()}</div>
-                </div>
-            `).join('');
-            
-            // Create a temporary popup to show reviews
-            const popup = document.createElement('div');
-            popup.className = 'review-form active';
-            popup.style.zIndex = '2001';
-            popup.innerHTML = `
-                <h3>${place.name} - Reviews</h3>
-                <div class="reviews-container">
-                    ${reviewsHtml}
-                </div>
-                <button class="btn btn-primary" onclick="this.parentElement.remove(); document.getElementById('overlay').classList.remove('active');">Close</button>
-            `;
-            document.body.appendChild(popup);
-            document.getElementById('overlay').classList.add('active');
-        }
-        
-        // Add review to existing place
-        window.addReview = function(placeId) {
-            const place = places.find(p => p.id === placeId);
-            if (!place) return;
-            
-            const form = document.createElement('div');
-            form.className = 'review-form active';
-            form.style.zIndex = '2001';
-            form.innerHTML = `
-                <h3>Add Review - ${place.name}</h3>
-                <div class="form-group">
-                    <label>Rating</label>
-                    <div class="star-rating" id="addReviewRating">
-                        <span class="star" onclick="setAddReviewRating(1)">⭐</span>
-                        <span class="star" onclick="setAddReviewRating(2)">⭐</span>
-                        <span class="star" onclick="setAddReviewRating(3)">⭐</span>
-                        <span class="star" onclick="setAddReviewRating(4)">⭐</span>
-                        <span class="star" onclick="setAddReviewRating(5)">⭐</span>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label>Review</label>
-                    <textarea id="addReviewText" placeholder="Share your experience..."></textarea>
-                </div>
-                <div class="form-buttons">
-                    <button class="btn btn-secondary" onclick="this.parentElement.parentElement.remove(); document.getElementById('overlay').classList.remove('active');">Cancel</button>
-                    <button class="btn btn-primary" onclick="submitReview('${placeId}')">Submit</button>
-                </div>
-            `;
-            document.body.appendChild(form);
-            document.getElementById('overlay').classList.add('active');
-        }
-        
-        window.setAddReviewRating = function(rating) {
-            window.tempRating = rating;
-            document.querySelectorAll('#addReviewRating .star').forEach((star, index) => {
-                if (index < rating) {
-                    star.style.color = '#ffd700';
-                } else {
-                    star.style.color = '#666';
-                }
-            });
-        }
-        
-        window.submitReview = function(placeId) {
-            const place = places.find(p => p.id === placeId);
-            if (!place) return;
-            
-            const text = document.getElementById('addReviewText').value.trim();
-            const rating = window.tempRating || 0;
-            
-            if (!text || rating === 0) {
-                showToast('Please fill all fields');
-                return;
-            }
-            
-            if (!place.reviews) place.reviews = [];
-            
-            place.reviews.push({
-                text: text,
-                rating: rating,
-                author: 'You',
-                date: new Date().toISOString()
-            });
-            
-            savePlaces();
-            refreshMarkers();
-            
-            document.querySelector('.review-form.active').remove();
-            document.getElementById('overlay').classList.remove('active');
-            
-            showToast('Review added!');
-        }
-        
-        // Mobile sheet controls
-        window.toggleSheet = function() {
-            const sheet = document.getElementById('mobileSheet');
-            sheet.classList.toggle('collapsed');
-        }
-        
-        window.switchTab = function(tabName) {
-            // Update active tab
-            document.querySelectorAll('.sheet-tab').forEach(tab => {
-                tab.classList.remove('active');
-            });
-            event.target.classList.add('active');
-            
-            // Show selected panel
-            document.querySelectorAll('.tab-panel').forEach(panel => {
-                panel.style.display = 'none';
-            });
-            document.getElementById(`tab-${tabName}`).style.display = 'block';
-            
-            // Update My Places if needed
-            if (tabName === 'my') {
-                updateMyPlaces();
-            }
-        }
-        
-        // Update my places list
-        function updateMyPlaces() {
-            const myPlaces = places.filter(p => p.id.startsWith('place-'));
-            
-            const html = myPlaces.map(place => `
-                <div class="review-item">
-                    <div class="review-header">
-                        <span class="review-author">${categoryEmojis[place.category]} ${place.name}</span>
-                        <button onclick="deletePlace('${place.id}')" style="background: #ff4757; color: white; border: none; border-radius: 3px; padding: 2px 8px; font-size: 11px;">Delete</button>
-                    </div>
-                    <div class="review-text">${place.priceRange || ''} ${place.reviews ? `(${place.reviews.length} reviews)` : ''}</div>
-                </div>
-            `).join('');
-            
-            document.getElementById('myPlacesList').innerHTML = html || '<p style="color: #999;">No places added yet</p>';
-        }
-        
-        // Delete place
-        window.deletePlace = function(placeId) {
-            if (confirm('Delete this place?')) {
-                places = places.filter(p => p.id !== placeId);
-                savePlaces();
-                refreshMarkers();
-                updateMyPlaces();
-                showToast('Place deleted');
-            }
-        }
-        
-        // Category filter
-        document.getElementById('categoryFilter').addEventListener('change', function(e) {
-            selectedCategory = e.target.value;
-            refreshMarkers();
-        });
-        
-        // Show toast message
-        function showToast(message) {
-            const existing = document.querySelector('.toast');
-            if (existing) existing.remove();
-            
-            const toast = document.createElement('div');
-            toast.className = 'toast';
-            toast.textContent = message;
-            document.body.appendChild(toast);
-            
-            setTimeout(() => {
-                toast.style.opacity = '0';
-                setTimeout(() => toast.remove(), 300);
-            }, 3000);
-        }
-        
-        // Initialize on load
-        document.addEventListener('DOMContentLoaded', () => {
-            initMap();
-            
-            // Check if mobile
-            if (window.innerWidth <= 768) {
-                document.getElementById('mobileSheet').classList.add('collapsed');
-            }
-        });
-        
-        // Prevent double-tap zoom on mobile
-        let lastTouchEnd = 0;
-        document.addEventListener('touchend', function(e) {
-            const now = Date.now();
-            if (now - lastTouchEnd <= 300) {
-                e.preventDefault();
-            }
-            lastTouchEnd = now;
-        }, false);
-    </script>
-</body>
-</html><!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html>
+<html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>TePlace - Tokyo Travel & Food Map</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TePlace Tokyo - Food & Travel Map</title>
     
-    <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-4F90EG7W7N"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-      gtag('config', 'G-4F90EG7W7N');
-    </script>
-    
-    <!-- Leaflet CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" 
-          integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" 
-          crossorigin=""/>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
         }
         
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
-            background: #1a1a2e;
-            color: #fff;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #f5f5f5;
             height: 100vh;
             overflow: hidden;
-            touch-action: none;
         }
         
         .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            padding: 10px 15px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 10px 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
             height: 50px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
         
         .logo {
-            font-size: 20px;
+            font-size: 18px;
             font-weight: bold;
-            display: flex;
-            align-items: center;
-            gap: 8px;
         }
         
-        .controls {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
-        
-        select {
-            padding: 6px 10px;
-            border-radius: 5px;
-            border: none;
-            background: rgba(255,255,255,0.9);
-            color: #333;
-            font-size: 13px;
-            cursor: pointer;
-        }
-        
-        .container {
+        .main-container {
             display: flex;
             height: calc(100vh - 50px);
-            position: relative;
         }
         
         #map {
             flex: 1;
-            height: 100%;
-            background: #f0f0f0;
-            touch-action: pan-x pan-y;
+            width: 100%;
         }
         
-        /* Desktop Sidebar */
         .sidebar {
-            width: 320px;
-            background: #0f3460;
-            padding: 15px;
+            width: 300px;
+            background: white;
+            box-shadow: -2px 0 4px rgba(0,0,0,0.1);
+            padding: 20px;
             overflow-y: auto;
-            box-shadow: -2px 0 10px rgba(0,0,0,0.3);
-            display: none;
         }
         
-        @media (min-width: 769px) {
-            .sidebar {
-                display: block;
-            }
-        }
-        
-        /* Mobile Bottom Sheet */
-        .mobile-bottom-sheet {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: #0f3460;
-            border-top-left-radius: 20px;
-            border-top-right-radius: 20px;
-            box-shadow: 0 -2px 20px rgba(0,0,0,0.3);
-            transition: transform 0.3s ease;
-            z-index: 1000;
-            display: none;
-            max-height: 70vh;
-            overflow: hidden;
-        }
-        
-        @media (max-width: 768px) {
-            .mobile-bottom-sheet {
-                display: block;
-            }
-        }
-        
-        .mobile-bottom-sheet.collapsed {
-            transform: translateY(calc(100% - 60px));
-        }
-        
-        .sheet-handle {
-            width: 40px;
-            height: 4px;
-            background: rgba(255,255,255,0.5);
-            border-radius: 2px;
-            margin: 10px auto;
-            cursor: pointer;
-        }
-        
-        .sheet-tabs {
-            display: flex;
-            padding: 0 15px 10px;
-            gap: 10px;
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-        }
-        
-        .sheet-tab {
-            padding: 8px 15px;
-            background: rgba(255,255,255,0.1);
-            border-radius: 20px;
-            color: #fff;
-            border: none;
-            font-size: 13px;
-            white-space: nowrap;
-            cursor: pointer;
-        }
-        
-        .sheet-tab.active {
+        .btn {
             background: #667eea;
-        }
-        
-        .sheet-content {
-            padding: 15px;
-            overflow-y: auto;
-            max-height: calc(70vh - 100px);
-            -webkit-overflow-scrolling: touch;
-        }
-        
-        .panel {
-            background: rgba(255,255,255,0.1);
-            border-radius: 10px;
-            padding: 15px;
-            margin-bottom: 15px;
-        }
-        
-        .panel h3 {
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%;
             margin-bottom: 10px;
-            font-size: 16px;
-            color: #ffd700;
         }
         
-        /* Review Form */
-        .review-form {
+        .btn:hover {
+            background: #5a67d8;
+        }
+        
+        .place-card {
+            background: #f9f9f9;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 10px;
+        }
+        
+        .place-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .rating {
+            color: #ffa500;
+            margin-bottom: 5px;
+        }
+        
+        .modal {
             display: none;
             position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+        }
+        
+        .modal-content {
+            position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            background: #1a1a2e;
-            border-radius: 15px;
+            background: white;
             padding: 20px;
+            border-radius: 10px;
             width: 90%;
             max-width: 400px;
-            max-height: 80vh;
-            overflow-y: auto;
-            z-index: 2000;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
-        }
-        
-        .review-form.active {
-            display: block;
-        }
-        
-        .review-form h3 {
-            color: #ffd700;
-            margin-bottom: 15px;
         }
         
         .form-group {
@@ -502,8 +117,7 @@
         .form-group label {
             display: block;
             margin-bottom: 5px;
-            font-size: 14px;
-            color: #fff;
+            font-weight: bold;
         }
         
         .form-group input,
@@ -511,16 +125,8 @@
         .form-group textarea {
             width: 100%;
             padding: 8px;
-            background: rgba(255,255,255,0.1);
-            border: 1px solid rgba(255,255,255,0.3);
-            border-radius: 5px;
-            color: #fff;
-            font-size: 14px;
-        }
-        
-        .form-group textarea {
-            min-height: 80px;
-            resize: vertical;
+            border: 1px solid #ddd;
+            border-radius: 4px;
         }
         
         .star-rating {
@@ -530,58 +136,366 @@
             cursor: pointer;
         }
         
-        .star-rating .star {
-            color: #666;
-            transition: color 0.2s;
+        .star {
+            color: #ddd;
         }
         
-        .star-rating .star.active {
-            color: #ffd700;
+        .star.active {
+            color: #ffa500;
         }
         
-        .form-buttons {
-            display: flex;
-            gap: 10px;
-            margin-top: 15px;
+        @media (max-width: 768px) {
+            .sidebar {
+                display: none;
+            }
+            
+            .mobile-menu {
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                background: white;
+                padding: 10px;
+                box-shadow: 0 -2px 4px rgba(0,0,0,0.1);
+                display: flex;
+                justify-content: space-around;
+            }
+            
+            .mobile-menu button {
+                background: none;
+                border: none;
+                font-size: 24px;
+                cursor: pointer;
+            }
         }
         
-        .btn {
-            flex: 1;
-            padding: 10px;
-            border: none;
-            border-radius: 5px;
-            font-size: 14px;
-            cursor: pointer;
-            transition: opacity 0.2s;
+        .mobile-menu {
+            display: none;
         }
         
-        .btn-primary {
-            background: #667eea;
-            color: white;
+        @media (max-width: 768px) {
+            .mobile-menu {
+                display: flex;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo">🗾 TePlace Tokyo</div>
+        <div>
+            <select id="categoryFilter" style="padding: 5px; border-radius: 4px;">
+                <option value="all">All Categories</option>
+                <option value="restaurant">Restaurant</option>
+                <option value="cafe">Cafe</option>
+                <option value="sightseeing">Sightseeing</option>
+                <option value="shopping">Shopping</option>
+            </select>
+        </div>
+    </div>
+    
+    <div class="main-container">
+        <div id="map"></div>
+        
+        <div class="sidebar">
+            <h3>Control Panel</h3>
+            <button class="btn" onclick="openAddPlace()">+ Add New Place</button>
+            
+            <h4 style="margin-top: 20px;">Recent Places</h4>
+            <div id="placesList"></div>
+        </div>
+    </div>
+    
+    <div class="mobile-menu">
+        <button onclick="openAddPlace()">➕</button>
+        <button onclick="showPlaces()">📍</button>
+        <button onclick="showTopRated()">⭐</button>
+        <button onclick="showMyPlaces()">👤</button>
+    </div>
+    
+    <div class="modal" id="addPlaceModal">
+        <div class="modal-content">
+            <h3>Add New Place</h3>
+            
+            <div class="form-group">
+                <label>Name</label>
+                <input type="text" id="placeName" placeholder="e.g., Ichiran Ramen">
+            </div>
+            
+            <div class="form-group">
+                <label>Category</label>
+                <select id="placeCategory">
+                    <option value="restaurant">Restaurant</option>
+                    <option value="cafe">Cafe</option>
+                    <option value="sightseeing">Sightseeing</option>
+                    <option value="shopping">Shopping</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label>Rating</label>
+                <div class="star-rating" id="starRating">
+                    <span class="star" data-rating="1">★</span>
+                    <span class="star" data-rating="2">★</span>
+                    <span class="star" data-rating="3">★</span>
+                    <span class="star" data-rating="4">★</span>
+                    <span class="star" data-rating="5">★</span>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label>Review</label>
+                <textarea id="reviewText" rows="3" placeholder="Your review..."></textarea>
+            </div>
+            
+            <button class="btn" onclick="savePlace()">Save Place</button>
+            <button class="btn" style="background: #999;" onclick="closeModal()">Cancel</button>
+        </div>
+    </div>
+    
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <script>
+        let map;
+        let markers = [];
+        let places = [];
+        let selectedRating = 0;
+        let clickedLocation = null;
+        
+        // Initialize map
+        function initMap() {
+            map = L.map('map').setView([35.6762, 139.6503], 13);
+            
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
+            
+            map.on('click', function(e) {
+                clickedLocation = e.latlng;
+                openAddPlace();
+            });
+            
+            loadPlaces();
         }
         
-        .btn-secondary {
-            background: #666;
-            color: white;
+        // Load places from localStorage
+        function loadPlaces() {
+            const saved = localStorage.getItem('teplaces');
+            if (saved) {
+                places = JSON.parse(saved);
+                displayPlaces();
+            }
+            
+            // Add some default places
+            if (places.length === 0) {
+                addDefaultPlaces();
+            }
         }
         
-        .btn:active {
-            opacity: 0.8;
+        // Add default Tokyo places
+        function addDefaultPlaces() {
+            const defaults = [
+                {
+                    name: 'Tokyo Tower',
+                    category: 'sightseeing',
+                    lat: 35.6586,
+                    lng: 139.7454,
+                    rating: 5,
+                    review: 'Amazing view of Tokyo!'
+                },
+                {
+                    name: 'Sensoji Temple',
+                    category: 'sightseeing',
+                    lat: 35.7148,
+                    lng: 139.7967,
+                    rating: 5,
+                    review: 'Beautiful historic temple'
+                },
+                {
+                    name: 'Tsukiji Market',
+                    category: 'restaurant',
+                    lat: 35.6654,
+                    lng: 139.7707,
+                    rating: 4,
+                    review: 'Fresh sushi!'
+                }
+            ];
+            
+            places = defaults;
+            savePlaces();
+            displayPlaces();
         }
         
-        /* Location Marker */
-        .location-marker {
-            background: linear-gradient(135deg, #ff6b6b, #ff4757);
-            color: white;
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
-            cursor: pointer;
+        // Display places on map
+        function displayPlaces() {
+            // Clear existing markers
+            markers.forEach(m => map.removeLayer(m));
+            markers = [];
+            
+            // Add new markers
+            places.forEach(place => {
+                const icon = L.divIcon({
+                    html: `<div style="background: ${getCategoryColor(place.category)}; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 16px;">${getCategoryEmoji(place.category)}</div>`,
+                    className: 'custom-marker',
+                    iconSize: [30, 30]
+                });
+                
+                const marker = L.marker([place.lat, place.lng], {icon})
+                    .addTo(map)
+                    .bindPopup(`
+                        <div style="min-width: 200px;">
+                            <h3>${place.name}</h3>
+                            <p>${'★'.repeat(place.rating)}</p>
+                            <p>${place.review || ''}</p>
+                            <p style="color: #666; font-size: 12px;">${place.category}</p>
+                        </div>
+                    `);
+                
+                markers.push(marker);
+            });
+            
+            updatePlacesList();
         }
         
-        .loca
+        // Get category color
+        function getCategoryColor(category) {
+            const colors = {
+                restaurant: '#ff6b6b',
+                cafe: '#a8744f',
+                sightseeing: '#4dabf7',
+                shopping: '#51cf66'
+            };
+            return colors[category] || '#868e96';
+        }
+        
+        // Get category emoji
+        function getCategoryEmoji(category) {
+            const emojis = {
+                restaurant: '🍜',
+                cafe: '☕',
+                sightseeing: '🏛️',
+                shopping: '🛍️'
+            };
+            return emojis[category] || '📍';
+        }
+        
+        // Update places list
+        function updatePlacesList() {
+            const list = document.getElementById('placesList');
+            list.innerHTML = places.slice(-5).reverse().map(place => `
+                <div class="place-card">
+                    <div class="place-title">${getCategoryEmoji(place.category)} ${place.name}</div>
+                    <div class="rating">${'★'.repeat(place.rating)}</div>
+                    <div style="font-size: 12px; color: #666;">${place.review || ''}</div>
+                </div>
+            `).join('');
+        }
+        
+        // Open add place modal
+        function openAddPlace() {
+            document.getElementById('addPlaceModal').style.display = 'block';
+            
+            if (!clickedLocation) {
+                alert('Please click on the map to select a location first');
+                closeModal();
+            }
+        }
+        
+        // Close modal
+        function closeModal() {
+            document.getElementById('addPlaceModal').style.display = 'none';
+            document.getElementById('placeName').value = '';
+            document.getElementById('reviewText').value = '';
+            selectedRating = 0;
+            updateStars();
+        }
+        
+        // Save place
+        function savePlace() {
+            const name = document.getElementById('placeName').value;
+            const category = document.getElementById('placeCategory').value;
+            const review = document.getElementById('reviewText').value;
+            
+            if (!name || selectedRating === 0) {
+                alert('Please enter name and rating');
+                return;
+            }
+            
+            if (!clickedLocation) {
+                alert('Please click on the map to select a location');
+                return;
+            }
+            
+            const newPlace = {
+                name,
+                category,
+                lat: clickedLocation.lat,
+                lng: clickedLocation.lng,
+                rating: selectedRating,
+                review,
+                date: new Date().toISOString()
+            };
+            
+            places.push(newPlace);
+            savePlaces();
+            displayPlaces();
+            closeModal();
+            clickedLocation = null;
+        }
+        
+        // Save to localStorage
+        function savePlaces() {
+            localStorage.setItem('teplaces', JSON.stringify(places));
+        }
+        
+        // Star rating
+        document.addEventListener('DOMContentLoaded', function() {
+            initMap();
+            
+            document.querySelectorAll('.star').forEach(star => {
+                star.addEventListener('click', function() {
+                    selectedRating = parseInt(this.dataset.rating);
+                    updateStars();
+                });
+            });
+        });
+        
+        function updateStars() {
+            document.querySelectorAll('.star').forEach((star, index) => {
+                if (index < selectedRating) {
+                    star.classList.add('active');
+                } else {
+                    star.classList.remove('active');
+                }
+            });
+        }
+        
+        // Mobile functions
+        function showPlaces() {
+            alert('Places list - Coming soon!');
+        }
+        
+        function showTopRated() {
+            const topRated = [...places].sort((a, b) => b.rating - a.rating).slice(0, 5);
+            alert('Top Rated:\n' + topRated.map(p => `${p.name} - ${'★'.repeat(p.rating)}`).join('\n'));
+        }
+        
+        function showMyPlaces() {
+            alert(`You have added ${places.length} places!`);
+        }
+        
+        // Category filter
+        document.getElementById('categoryFilter').addEventListener('change', function(e) {
+            const category = e.target.value;
+            if (category === 'all') {
+                displayPlaces();
+            } else {
+                // Filter and display
+                const filtered = places.filter(p => p.category === category);
+                // Simplified filtering display
+                alert(`Found ${filtered.length} ${category} places`);
+            }
+        });
+    </script>
+</body>
+</html>
