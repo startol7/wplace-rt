@@ -1,9 +1,299 @@
-<!DOCTYPE html>
+// Star rating setup
+        document.querySelectorAll('.star').forEach(star => {
+            star.addEventListener('click', function() {
+                selectedRating = parseInt(this.dataset.rating);
+                updateStarDisplay();
+            });
+        });
+        
+        function updateStarDisplay() {
+            document.querySelectorAll('.star').forEach((star, index) => {
+                if (index < selectedRating) {
+                    star.classList.add('active');
+                } else {
+                    star.classList.remove('active');
+                }
+            });
+        }
+        
+        // Update top rated list
+        function updateTopRated() {
+            const sorted = [...places]
+                .filter(p => p.reviews && p.reviews.length > 0)
+                .sort((a, b) => {
+                    const avgA = a.reviews.reduce((sum, r) => sum + r.rating, 0) / a.reviews.length;
+                    const avgB = b.reviews.reduce((sum, r) => sum + r.rating, 0) / b.reviews.length;
+                    return avgB - avgA;
+                })
+                .slice(0, 5);
+            
+            const html = sorted.map(place => {
+                const avgRating = (place.reviews.reduce((sum, r) => sum + r.rating, 0) / place.reviews.length).toFixed(1);
+                return `
+                    <div class="review-item">
+                        <div class="review-header">
+                            <span class="review-author">${categoryEmojis[place.category]} ${place.name}</span>
+                            <span class="review-rating">${'⭐'.repeat(Math.round(avgRating))}</span>
+                        </div>
+                        <div class="review-text">${avgRating}/5.0 (${place.reviews.length} reviews)</div>
+                    </div>
+                `;
+            }).join('');
+            
+            const topRatedList = document.getElementById('topRatedList');
+            const mobileTopRated = document.getElementById('mobileTopRated');
+            
+            if (topRatedList) topRatedList.innerHTML = html || '<p style="color: #999;">No reviews yet</p>';
+            if (mobileTopRated) mobileTopRated.innerHTML = html || '<p style="color: #999;">No reviews yet</p>';
+        }
+        
+        // Update recent reviews
+        function updateRecentReviews() {
+            const allReviews = [];
+            places.forEach(place => {
+                if (place.reviews) {
+                    place.reviews.forEach(review => {
+                        allReviews.push({
+                            ...review,
+                            placeName: place.name,
+                            placeCategory: place.category
+                        });
+                    });
+                }
+            });
+            
+            const recent = allReviews
+                .sort((a, b) => new Date(b.date) - new Date(a.date))
+                .slice(0, 5);
+            
+            const html = recent.map(review => `
+                <div class="review-item">
+                    <div class="review-header">
+                        <span class="review-author">${categoryEmojis[review.placeCategory]} ${review.placeName}</span>
+                    </div>
+                    <div class="review-rating">${'⭐'.repeat(review.rating)}</div>
+                    <div class="review-text">"${review.text}"</div>
+                    <div class="review-date">- ${review.author}</div>
+                </div>
+            `).join('');
+            
+            const recentReviewsList = document.getElementById('recentReviewsList');
+            const mobileRecentReviews = document.getElementById('mobileRecentReviews');
+            
+            if (recentReviewsList) recentReviewsList.innerHTML = html || '<p style="color: #999;">No reviews yet</p>';
+            if (mobileRecentReviews) mobileRecentReviews.innerHTML = html || '<p style="color: #999;">No reviews yet</p>';
+        }
+        
+        // Show reviews for a place
+        window.showReviews = function(placeId) {
+            const place = places.find(p => p.id === placeId);
+            if (!place || !place.reviews || place.reviews.length === 0) {
+                showToast('No reviews yet');
+                return;
+            }
+            
+            const reviewsHtml = place.reviews.map(review => `
+                <div class="review-item">
+                    <div class="review-header">
+                        <span class="review-author">${review.author}</span>
+                        <span class="review-rating">${'⭐'.repeat(review.rating)}</span>
+                    </div>
+                    <div class="review-text">${review.text}</div>
+                    <div class="review-date">${new Date(review.date).toLocaleDateString()}</div>
+                </div>
+            `).join('');
+            
+            // Create a temporary popup to show reviews
+            const popup = document.createElement('div');
+            popup.className = 'review-form active';
+            popup.style.zIndex = '2001';
+            popup.innerHTML = `
+                <h3>${place.name} - Reviews</h3>
+                <div class="reviews-container">
+                    ${reviewsHtml}
+                </div>
+                <button class="btn btn-primary" onclick="this.parentElement.remove(); document.getElementById('overlay').classList.remove('active');">Close</button>
+            `;
+            document.body.appendChild(popup);
+            document.getElementById('overlay').classList.add('active');
+        }
+        
+        // Add review to existing place
+        window.addReview = function(placeId) {
+            const place = places.find(p => p.id === placeId);
+            if (!place) return;
+            
+            const form = document.createElement('div');
+            form.className = 'review-form active';
+            form.style.zIndex = '2001';
+            form.innerHTML = `
+                <h3>Add Review - ${place.name}</h3>
+                <div class="form-group">
+                    <label>Rating</label>
+                    <div class="star-rating" id="addReviewRating">
+                        <span class="star" onclick="setAddReviewRating(1)">⭐</span>
+                        <span class="star" onclick="setAddReviewRating(2)">⭐</span>
+                        <span class="star" onclick="setAddReviewRating(3)">⭐</span>
+                        <span class="star" onclick="setAddReviewRating(4)">⭐</span>
+                        <span class="star" onclick="setAddReviewRating(5)">⭐</span>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Review</label>
+                    <textarea id="addReviewText" placeholder="Share your experience..."></textarea>
+                </div>
+                <div class="form-buttons">
+                    <button class="btn btn-secondary" onclick="this.parentElement.parentElement.remove(); document.getElementById('overlay').classList.remove('active');">Cancel</button>
+                    <button class="btn btn-primary" onclick="submitReview('${placeId}')">Submit</button>
+                </div>
+            `;
+            document.body.appendChild(form);
+            document.getElementById('overlay').classList.add('active');
+        }
+        
+        window.setAddReviewRating = function(rating) {
+            window.tempRating = rating;
+            document.querySelectorAll('#addReviewRating .star').forEach((star, index) => {
+                if (index < rating) {
+                    star.style.color = '#ffd700';
+                } else {
+                    star.style.color = '#666';
+                }
+            });
+        }
+        
+        window.submitReview = function(placeId) {
+            const place = places.find(p => p.id === placeId);
+            if (!place) return;
+            
+            const text = document.getElementById('addReviewText').value.trim();
+            const rating = window.tempRating || 0;
+            
+            if (!text || rating === 0) {
+                showToast('Please fill all fields');
+                return;
+            }
+            
+            if (!place.reviews) place.reviews = [];
+            
+            place.reviews.push({
+                text: text,
+                rating: rating,
+                author: 'You',
+                date: new Date().toISOString()
+            });
+            
+            savePlaces();
+            refreshMarkers();
+            
+            document.querySelector('.review-form.active').remove();
+            document.getElementById('overlay').classList.remove('active');
+            
+            showToast('Review added!');
+        }
+        
+        // Mobile sheet controls
+        window.toggleSheet = function() {
+            const sheet = document.getElementById('mobileSheet');
+            sheet.classList.toggle('collapsed');
+        }
+        
+        window.switchTab = function(tabName) {
+            // Update active tab
+            document.querySelectorAll('.sheet-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // Show selected panel
+            document.querySelectorAll('.tab-panel').forEach(panel => {
+                panel.style.display = 'none';
+            });
+            document.getElementById(`tab-${tabName}`).style.display = 'block';
+            
+            // Update My Places if needed
+            if (tabName === 'my') {
+                updateMyPlaces();
+            }
+        }
+        
+        // Update my places list
+        function updateMyPlaces() {
+            const myPlaces = places.filter(p => p.id.startsWith('place-'));
+            
+            const html = myPlaces.map(place => `
+                <div class="review-item">
+                    <div class="review-header">
+                        <span class="review-author">${categoryEmojis[place.category]} ${place.name}</span>
+                        <button onclick="deletePlace('${place.id}')" style="background: #ff4757; color: white; border: none; border-radius: 3px; padding: 2px 8px; font-size: 11px;">Delete</button>
+                    </div>
+                    <div class="review-text">${place.priceRange || ''} ${place.reviews ? `(${place.reviews.length} reviews)` : ''}</div>
+                </div>
+            `).join('');
+            
+            document.getElementById('myPlacesList').innerHTML = html || '<p style="color: #999;">No places added yet</p>';
+        }
+        
+        // Delete place
+        window.deletePlace = function(placeId) {
+            if (confirm('Delete this place?')) {
+                places = places.filter(p => p.id !== placeId);
+                savePlaces();
+                refreshMarkers();
+                updateMyPlaces();
+                showToast('Place deleted');
+            }
+        }
+        
+        // Category filter
+        document.getElementById('categoryFilter').addEventListener('change', function(e) {
+            selectedCategory = e.target.value;
+            refreshMarkers();
+        });
+        
+        // Show toast message
+        function showToast(message) {
+            const existing = document.querySelector('.toast');
+            if (existing) existing.remove();
+            
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+        
+        // Initialize on load
+        document.addEventListener('DOMContentLoaded', () => {
+            initMap();
+            
+            // Check if mobile
+            if (window.innerWidth <= 768) {
+                document.getElementById('mobileSheet').classList.add('collapsed');
+            }
+        });
+        
+        // Prevent double-tap zoom on mobile
+        let lastTouchEnd = 0;
+        document.addEventListener('touchend', function(e) {
+            const now = Date.now();
+            if (now - lastTouchEnd <= 300) {
+                e.preventDefault();
+            }
+            lastTouchEnd = now;
+        }, false);
+    </script>
+</body>
+</html><!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TePlace - World Map Game</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>TePlace - Tokyo Travel & Food Map</title>
     
     <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-4F90EG7W7N"></script>
@@ -24,6 +314,7 @@
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
         }
         
         body {
@@ -32,187 +323,253 @@
             color: #fff;
             height: 100vh;
             overflow: hidden;
+            touch-action: none;
         }
         
         .header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            padding: 10px 20px;
+            padding: 10px 15px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             box-shadow: 0 2px 10px rgba(0,0,0,0.3);
-            height: 60px;
+            height: 50px;
         }
         
         .logo {
-            font-size: 24px;
+            font-size: 20px;
             font-weight: bold;
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
         }
         
         .controls {
             display: flex;
-            gap: 15px;
+            gap: 10px;
             align-items: center;
         }
         
         select {
-            padding: 8px 15px;
+            padding: 6px 10px;
             border-radius: 5px;
             border: none;
             background: rgba(255,255,255,0.9);
             color: #333;
-            font-size: 14px;
+            font-size: 13px;
             cursor: pointer;
         }
         
         .container {
             display: flex;
-            height: calc(100vh - 60px);
+            height: calc(100vh - 50px);
+            position: relative;
         }
         
         #map {
             flex: 1;
             height: 100%;
             background: #f0f0f0;
+            touch-action: pan-x pan-y;
         }
         
+        /* Desktop Sidebar */
         .sidebar {
             width: 320px;
             background: #0f3460;
-            padding: 20px;
+            padding: 15px;
             overflow-y: auto;
             box-shadow: -2px 0 10px rgba(0,0,0,0.3);
+            display: none;
+        }
+        
+        @media (min-width: 769px) {
+            .sidebar {
+                display: block;
+            }
+        }
+        
+        /* Mobile Bottom Sheet */
+        .mobile-bottom-sheet {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #0f3460;
+            border-top-left-radius: 20px;
+            border-top-right-radius: 20px;
+            box-shadow: 0 -2px 20px rgba(0,0,0,0.3);
+            transition: transform 0.3s ease;
+            z-index: 1000;
+            display: none;
+            max-height: 70vh;
+            overflow: hidden;
+        }
+        
+        @media (max-width: 768px) {
+            .mobile-bottom-sheet {
+                display: block;
+            }
+        }
+        
+        .mobile-bottom-sheet.collapsed {
+            transform: translateY(calc(100% - 60px));
+        }
+        
+        .sheet-handle {
+            width: 40px;
+            height: 4px;
+            background: rgba(255,255,255,0.5);
+            border-radius: 2px;
+            margin: 10px auto;
+            cursor: pointer;
+        }
+        
+        .sheet-tabs {
+            display: flex;
+            padding: 0 15px 10px;
+            gap: 10px;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        .sheet-tab {
+            padding: 8px 15px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 20px;
+            color: #fff;
+            border: none;
+            font-size: 13px;
+            white-space: nowrap;
+            cursor: pointer;
+        }
+        
+        .sheet-tab.active {
+            background: #667eea;
+        }
+        
+        .sheet-content {
+            padding: 15px;
+            overflow-y: auto;
+            max-height: calc(70vh - 100px);
+            -webkit-overflow-scrolling: touch;
         }
         
         .panel {
             background: rgba(255,255,255,0.1);
             border-radius: 10px;
             padding: 15px;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
         }
         
         .panel h3 {
             margin-bottom: 10px;
-            font-size: 18px;
+            font-size: 16px;
             color: #ffd700;
         }
         
-        .color-controls {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-            margin-top: 10px;
+        /* Review Form */
+        .review-form {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #1a1a2e;
+            border-radius: 15px;
+            padding: 20px;
+            width: 90%;
+            max-width: 400px;
+            max-height: 80vh;
+            overflow-y: auto;
+            z-index: 2000;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
         }
         
-        .color-picker {
-            width: 50px;
-            height: 50px;
-            border: 3px solid #fff;
-            border-radius: 50%;
-            cursor: pointer;
+        .review-form.active {
+            display: block;
         }
         
-        .color-hex {
-            flex: 1;
-            padding: 8px;
-            border-radius: 5px;
-            border: 1px solid rgba(255,255,255,0.3);
-            background: rgba(255,255,255,0.1);
+        .review-form h3 {
+            color: #ffd700;
+            margin-bottom: 15px;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 14px;
             color: #fff;
-            font-family: monospace;
         }
         
-        .tabs {
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 8px;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 5px;
+            color: #fff;
+            font-size: 14px;
+        }
+        
+        .form-group textarea {
+            min-height: 80px;
+            resize: vertical;
+        }
+        
+        .star-rating {
             display: flex;
             gap: 5px;
-            margin-bottom: 10px;
-        }
-        
-        .tab {
-            flex: 1;
-            padding: 8px;
-            background: rgba(255,255,255,0.1);
-            border: none;
-            color: #fff;
-            border-radius: 5px;
+            font-size: 24px;
             cursor: pointer;
-            transition: all 0.3s;
         }
         
-        .tab.active {
-            background: #667eea;
+        .star-rating .star {
+            color: #666;
+            transition: color 0.2s;
         }
         
-        .ranking-list {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-        
-        .ranking-list li {
-            display: flex;
-            justify-content: space-between;
-            padding: 8px 0;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-        }
-        
-        .ranking-list strong {
+        .star-rating .star.active {
             color: #ffd700;
         }
         
-        .stats {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
+        .form-buttons {
+            display: flex;
             gap: 10px;
-            margin-top: 10px;
+            margin-top: 15px;
         }
         
-        .stat {
-            text-align: center;
+        .btn {
+            flex: 1;
             padding: 10px;
-            background: rgba(255,255,255,0.1);
+            border: none;
             border-radius: 5px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: opacity 0.2s;
         }
         
-        .stat-value {
-            font-size: 24px;
-            font-weight: bold;
-            color: #4caf50;
+        .btn-primary {
+            background: #667eea;
+            color: white;
         }
         
-        .stat-label {
-            font-size: 12px;
-            color: rgba(255,255,255,0.7);
-            margin-top: 5px;
+        .btn-secondary {
+            background: #666;
+            color: white;
         }
         
-        .cooldown {
-            margin-top: 10px;
-            padding: 10px;
-            background: rgba(255,255,255,0.1);
-            border-radius: 5px;
-            text-align: center;
+        .btn:active {
+            opacity: 0.8;
         }
         
-        .cooldown-bar {
-            width: 100%;
-            height: 10px;
-            background: rgba(0,0,0,0.3);
-            border-radius: 5px;
-            overflow: hidden;
-            margin: 10px 0;
-        }
-        
-        .cooldown-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #4caf50, #8bc34a);
-            width: 0%;
-            transition: width 0.1s linear;
-        }
-        
+        /* Location Marker */
         .location-marker {
             background: linear-gradient(135deg, #ff6b6b, #ff4757);
             color: white;
@@ -225,801 +582,6 @@
             font-size: 20px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.3);
             cursor: pointer;
-            transition: transform 0.2s;
         }
         
-        .location-marker:hover {
-            transform: scale(1.2);
-        }
-        
-        .location-popup {
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 12px;
-            padding: 0;
-            width: 280px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-            overflow: hidden;
-        }
-        
-        .location-popup .photo-container {
-            width: 100%;
-            height: 180px;
-            overflow: hidden;
-            position: relative;
-        }
-        
-        .location-popup img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-        
-        .location-popup .photo-placeholder {
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 48px;
-        }
-        
-        .location-popup .info {
-            padding: 12px;
-            color: #333;
-        }
-        
-        .location-popup h3 {
-            margin: 0 0 8px 0;
-            font-size: 18px;
-            font-weight: bold;
-            color: #1a1a2e;
-        }
-        
-        .location-popup .description {
-            font-size: 13px;
-            line-height: 1.4;
-            color: #666;
-            margin-bottom: 8px;
-        }
-        
-        .location-popup .tags {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 4px;
-        }
-        
-        .location-popup .tag {
-            background: #667eea;
-            color: white;
-            padding: 2px 8px;
-            border-radius: 12px;
-            font-size: 11px;
-        }
-        
-        @media (max-width: 768px) {
-            .container {
-                flex-direction: column;
-            }
-            
-            #map {
-                height: 60vh;
-            }
-            
-            .sidebar {
-                width: 100%;
-                height: 40vh;
-                padding: 10px;
-            }
-            
-            .header {
-                padding: 10px;
-            }
-            
-            .logo {
-                font-size: 18px;
-            }
-            
-            .controls {
-                gap: 10px;
-            }
-            
-            select {
-                padding: 5px 10px;
-                font-size: 12px;
-            }
-        }
-        
-        .toast {
-            position: fixed;
-            top: 80px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #4caf50;
-            color: white;
-            padding: 12px 24px;
-            border-radius: 5px;
-            box-shadow: 0 3px 10px rgba(0,0,0,0.3);
-            z-index: 10000;
-            animation: slideIn 0.3s ease;
-        }
-        
-        @keyframes slideIn {
-            from {
-                top: 60px;
-                opacity: 0;
-            }
-            to {
-                top: 80px;
-                opacity: 1;
-            }
-        }
-    </style>
-</head>
-<body>
-    <div class="header">
-        <div class="logo">
-            🌍 TePlace Tokyo
-        </div>
-        <div class="controls">
-            <select id="countrySelect">
-                <option value="Japan">Japan</option>
-                <option value="United States">United States</option>
-                <option value="Korea">Korea</option>
-                <option value="China">China</option>
-                <option value="United Kingdom">United Kingdom</option>
-                <option value="France">France</option>
-                <option value="Germany">Germany</option>
-                <option value="Brazil">Brazil</option>
-            </select>
-        </div>
-    </div>
-    
-    <div class="container">
-        <div id="map"></div>
-        
-        <div class="sidebar">
-            <div class="panel">
-                <h3>📊 Statistics</h3>
-                <div class="stats">
-                    <div class="stat">
-                        <div class="stat-value" id="statTotal">0</div>
-                        <div class="stat-label">Total</div>
-                    </div>
-                    <div class="stat">
-                        <div class="stat-value" id="statMine">0</div>
-                        <div class="stat-label">Yours</div>
-                    </div>
-                    <div class="stat">
-                        <div class="stat-value" id="statOnline">0</div>
-                        <div class="stat-label">Online</div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="panel">
-                <h3>🎨 Color</h3>
-                <div class="color-controls">
-                    <input type="color" class="color-picker" id="colorPicker" value="#ff4444">
-                    <input type="text" class="color-hex" id="colorHex" value="#ff4444">
-                </div>
-            </div>
-            
-            <div class="panel">
-                <h3>🏆 World Ranking</h3>
-                <div class="tabs">
-                    <button class="tab active" data-period="today">Today</button>
-                    <button class="tab" data-period="week">Week</button>
-                    <button class="tab" data-period="month">Month</button>
-                </div>
-                <ul class="ranking-list" id="rankingList">
-                    <li>Loading...</li>
-                </ul>
-            </div>
-            
-            <div class="panel">
-                <h3>⏱️ Cooldown</h3>
-                <div class="cooldown">
-                    <div id="cooldownText">Ready!</div>
-                    <div class="cooldown-bar">
-                        <div class="cooldown-fill" id="cooldownFill"></div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="panel">
-                <h3>📍 Tourist Spots</h3>
-                <button id="togglePhotoMode" style="width: 100%; padding: 8px; background: #667eea; color: white; border: none; border-radius: 5px; cursor: pointer;">
-                    Toggle Photo Mode
-                </button>
-                <div id="photoStatus" style="margin-top: 10px; font-size: 12px; color: #ffd700;">
-                    Hover over markers to see photos
-                </div>
-            </div>
-            
-            <div class="panel">
-                <h3>➕ Add Custom Location</h3>
-                <input type="text" id="customLocationName" placeholder="Location name (e.g., Odaiba)" 
-                       style="width: 100%; padding: 6px; margin-bottom: 8px; background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.3); border-radius: 4px;">
-                
-                <input type="text" id="customLocationDesc" placeholder="Description" 
-                       style="width: 100%; padding: 6px; margin-bottom: 8px; background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.3); border-radius: 4px;">
-                
-                <div style="display: flex; gap: 8px; margin-bottom: 8px;">
-                    <input type="text" id="customLocationEmoji" placeholder="Emoji 🌉" maxlength="2"
-                           style="width: 60px; padding: 6px; background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.3); border-radius: 4px; text-align: center; font-size: 20px;">
-                    
-                    <input type="text" id="customLocationTags" placeholder="Tags (comma separated)" 
-                           style="flex: 1; padding: 6px; background: rgba(255,255,255,0.1); color: white; border: 1px solid rgba(255,255,255,0.3); border-radius: 4px;">
-                </div>
-                
-                <button id="addLocationMode" style="width: 100%; padding: 8px; background: #22c55e; color: white; border: none; border-radius: 5px; cursor: pointer;">
-                    Click Map to Place Marker
-                </button>
-                
-                <div id="customLocationsList" style="margin-top: 10px; max-height: 150px; overflow-y: auto;">
-                    <!-- Custom locations will appear here -->
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Leaflet JS -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" 
-            integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" 
-            crossorigin=""></script>
-    
-    <script>
-        // Global variables
-        let map = null;
-        let tilesLayer = null;
-        let locationsLayer = null;
-        let currentCountry = 'Japan';
-        let currentColor = '#ff4444';
-        let cooldownEnd = 0;
-        let myTileCount = 0;
-        let totalTileCount = 0;
-        let photoMode = false;
-        let addLocationMode = false;
-        let userPhotos = {};
-        let customLocations = [];
-        
-        const TILE_SIZE = 0.0005;
-        
-        // Tourist locations
-        const touristLocations = [
-            {
-                id: 'shibuya',
-                name: 'Shibuya Crossing',
-                lat: 35.6595,
-                lng: 139.7004,
-                description: 'The worlds busiest pedestrian crossing',
-                tags: ['Shopping', 'Nightlife', 'Culture'],
-                emoji: '🏢',
-                defaultPhoto: 'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=400'
-            },
-            {
-                id: 'sensoji',
-                name: 'Sensoji Temple',
-                lat: 35.7148,
-                lng: 139.7967,
-                description: 'Tokyos oldest temple with traditional market street',
-                tags: ['Temple', 'History', 'Shopping'],
-                emoji: '⛩️',
-                defaultPhoto: 'https://images.unsplash.com/photo-1545569341-9eb8b30979d9?w=400'
-            },
-            {
-                id: 'tokyo-tower',
-                name: 'Tokyo Tower',
-                lat: 35.6586,
-                lng: 139.7454,
-                description: 'Iconic 333m tower with observation decks',
-                tags: ['Landmark', 'Views', 'Night'],
-                emoji: '🗼',
-                defaultPhoto: 'https://images.unsplash.com/photo-1536098561742-ca998e48cbcc?w=400'
-            },
-            {
-                id: 'skytree',
-                name: 'Tokyo Skytree',
-                lat: 35.7100,
-                lng: 139.8107,
-                description: 'Tallest structure in Japan at 634m',
-                tags: ['Views', 'Shopping', 'Modern'],
-                emoji: '🗼',
-                defaultPhoto: 'https://images.unsplash.com/photo-1508038118390-0ca2971a3e2f?w=400'
-            },
-            {
-                id: 'meiji',
-                name: 'Meiji Shrine',
-                lat: 35.6764,
-                lng: 139.6993,
-                description: 'Peaceful Shinto shrine surrounded by forest',
-                tags: ['Shrine', 'Nature', 'Culture'],
-                emoji: '⛩️',
-                defaultPhoto: 'https://images.unsplash.com/photo-1590559899731-a382839e5549?w=400'
-            }
-        ];
-        
-        // Initialize map
-        function initMap() {
-            try {
-                console.log('Initializing map...');
-                
-                map = L.map('map', {
-                    center: [35.6762, 139.6503],
-                    zoom: 12,
-                    zoomControl: true
-                });
-                
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    maxZoom: 19,
-                    attribution: '© OpenStreetMap contributors'
-                }).addTo(map);
-                
-                tilesLayer = L.layerGroup().addTo(map);
-                
-                map.on('click', onMapClick);
-                
-                addTouristLocations();
-                drawSimpleArt();
-                
-                console.log('Map initialized successfully');
-                
-            } catch (error) {
-                console.error('Error initializing map:', error);
-            }
-        }
-        
-        // Add tourist location markers
-        function addTouristLocations() {
-            locationsLayer = L.layerGroup().addTo(map);
-            
-            // Load custom locations from localStorage
-            const savedCustomLocations = localStorage.getItem('customLocations');
-            if (savedCustomLocations) {
-                customLocations = JSON.parse(savedCustomLocations);
-            }
-            
-            // Combine default and custom locations
-            const allLocations = [...touristLocations, ...customLocations];
-            
-            allLocations.forEach(location => {
-                const icon = L.divIcon({
-                    html: `<div class="location-marker" style="${location.isCustom ? 'background: linear-gradient(135deg, #22c55e, #16a34a);' : ''}">${location.emoji}</div>`,
-                    className: 'custom-div-icon',
-                    iconSize: [36, 36],
-                    iconAnchor: [18, 18]
-                });
-                
-                const marker = L.marker([location.lat, location.lng], { icon })
-                    .addTo(locationsLayer);
-                
-                const popupContent = createLocationPopup(location);
-                
-                marker.bindPopup(popupContent, {
-                    maxWidth: 280,
-                    className: 'location-popup',
-                    closeButton: false,
-                    autoClose: false
-                });
-                
-                marker.on('mouseover', function() {
-                    this.openPopup();
-                });
-                
-                marker.on('mouseout', function() {
-                    setTimeout(() => {
-                        this.closePopup();
-                    }, 500);
-                });
-                
-                marker.on('click', function(e) {
-                    if (photoMode) {
-                        uploadPhotoForLocation(location.id, e);
-                    } else {
-                        this.openPopup();
-                    }
-                });
-            });
-            
-            updateCustomLocationsList();
-        }
-        
-        // Create location popup with delete option for custom locations
-        function createLocationPopup(location) {
-            const userPhoto = userPhotos[location.id];
-            const photoUrl = userPhoto || location.defaultPhoto;
-            
-            let deleteButton = '';
-            if (location.isCustom) {
-                deleteButton = `
-                    <button onclick="deleteCustomLocation('${location.id}')" 
-                            style="position: absolute; top: 5px; right: 5px; background: #ff4757; color: white; border: none; border-radius: 50%; width: 30px; height: 30px; cursor: pointer; font-size: 16px;">
-                        ×
-                    </button>
-                `;
-            }
-            
-            return `
-                <div class="photo-container" style="position: relative;">
-                    ${deleteButton}
-                    ${photoUrl ? 
-                        `<img src="${photoUrl}" alt="${location.name}" onerror="this.parentElement.innerHTML='<div class=\\'photo-placeholder\\'>${location.emoji}</div>'">` :
-                        `<div class="photo-placeholder">${location.emoji}</div>`
-                    }
-                </div>
-                <div class="info">
-                    <h3>${location.name} ${location.isCustom ? '<span style="font-size: 12px; color: #22c55e;">(Custom)</span>' : ''}</h3>
-                    <p class="description">${location.description}</p>
-                    <div class="tags">
-                        ${location.tags.map(tag => `<span class="tag">${tag}</span>`).join('')}
-                    </div>
-                </div>
-            `;
-        }
-        
-        // Add custom location
-        function addCustomLocation(lat, lng) {
-            const name = document.getElementById('customLocationName').value;
-            const desc = document.getElementById('customLocationDesc').value;
-            const emoji = document.getElementById('customLocationEmoji').value || '📍';
-            const tags = document.getElementById('customLocationTags').value.split(',').map(t => t.trim()).filter(t => t);
-            
-            if (!name) {
-                showToast('Please enter a location name');
-                return;
-            }
-            
-            const customLocation = {
-                id: 'custom-' + Date.now(),
-                name: name,
-                lat: lat,
-                lng: lng,
-                description: desc || 'Custom location',
-                tags: tags.length > 0 ? tags : ['Custom'],
-                emoji: emoji,
-                defaultPhoto: null,
-                isCustom: true
-            };
-            
-            customLocations.push(customLocation);
-            localStorage.setItem('customLocations', JSON.stringify(customLocations));
-            
-            // Refresh markers
-            locationsLayer.clearLayers();
-            addTouristLocations();
-            
-            // Clear form
-            document.getElementById('customLocationName').value = '';
-            document.getElementById('customLocationDesc').value = '';
-            document.getElementById('customLocationEmoji').value = '';
-            document.getElementById('customLocationTags').value = '';
-            
-            // Exit add location mode
-            addLocationMode = false;
-            const addBtn = document.getElementById('addLocationMode');
-            addBtn.style.background = '#22c55e';
-            addBtn.textContent = 'Click Map to Place Marker';
-            
-            showToast('Custom location added!');
-        }
-        
-        // Delete custom location
-        window.deleteCustomLocation = function(locationId) {
-            customLocations = customLocations.filter(loc => loc.id !== locationId);
-            localStorage.setItem('customLocations', JSON.stringify(customLocations));
-            
-            // Remove associated photo
-            delete userPhotos[locationId];
-            localStorage.setItem('userPhotos', JSON.stringify(userPhotos));
-            
-            // Refresh markers
-            locationsLayer.clearLayers();
-            addTouristLocations();
-            
-            showToast('Location deleted');
-        }
-        
-        // Update custom locations list
-        function updateCustomLocationsList() {
-            const listContainer = document.getElementById('customLocationsList');
-            if (!listContainer) return;
-            
-            if (customLocations.length === 0) {
-                listContainer.innerHTML = '<div style="color: #999; font-size: 12px;">No custom locations yet</div>';
-                return;
-            }
-            
-            const html = customLocations.map(loc => `
-                <div style="display: flex; justify-content: space-between; align-items: center; padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.1);">
-                    <span style="font-size: 14px;">
-                        ${loc.emoji} ${loc.name}
-                    </span>
-                    <button onclick="deleteCustomLocation('${loc.id}')" 
-                            style="background: #ff4757; color: white; border: none; border-radius: 3px; padding: 2px 8px; font-size: 12px; cursor: pointer;">
-                        Delete
-                    </button>
-                </div>
-            `).join('');
-            
-            listContainer.innerHTML = html;
-        }
-        
-        // Upload photo
-        function uploadPhotoForLocation(locationId, event) {
-            const input = document.createElement('input');
-            input.type = 'file';
-            input.accept = 'image/*';
-            
-            input.onchange = function(e) {
-                const file = e.target.files[0];
-                if (file) {
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        userPhotos[locationId] = e.target.result;
-                        localStorage.setItem('userPhotos', JSON.stringify(userPhotos));
-                        
-                        locationsLayer.clearLayers();
-                        addTouristLocations();
-                        
-                        showToast('Photo uploaded!');
-                    };
-                    reader.readAsDataURL(file);
-                }
-            };
-            
-            input.click();
-        }
-        
-        // Draw simple pixel art
-        function drawSimpleArt() {
-            // Tokyo Tower
-            const tokyoTower = [
-                ['', '#ff0000', ''],
-                ['#ff0000', '#ff0000', '#ff0000'],
-                ['', '#ff0000', ''],
-                ['#ff0000', '#ff0000', '#ff0000']
-            ];
-            drawPattern(35.6586, 139.7454, tokyoTower);
-            
-            // Mt Fuji
-            const fuji = [
-                ['', '#ffffff', ''],
-                ['#ffffff', '#ffffff', '#ffffff'],
-                ['#4169e1', '#4169e1', '#4169e1']
-            ];
-            drawPattern(35.6700, 139.7000, fuji);
-            
-            // Sakura
-            const sakura = [
-                ['#ffb7c5', '#ffb7c5', '#ffb7c5'],
-                ['', '#8b4513', ''],
-                ['', '#8b4513', '']
-            ];
-            drawPattern(35.6800, 139.7600, sakura);
-            
-            totalTileCount = 100;
-            document.getElementById('statTotal').textContent = totalTileCount;
-        }
-        
-        // Draw pattern helper
-        function drawPattern(baseLat, baseLng, pattern) {
-            pattern.forEach((row, y) => {
-                row.forEach((color, x) => {
-                    if (color && color !== '') {
-                        const lat = baseLat - (y * TILE_SIZE);
-                        const lng = baseLng + (x * TILE_SIZE);
-                        drawTile(lat, lng, color, 0.9);
-                    }
-                });
-            });
-        }
-        
-        // Draw tile
-        function drawTile(lat, lng, color, opacity = 0.7) {
-            const lat0 = Math.floor(lat / TILE_SIZE) * TILE_SIZE;
-            const lng0 = Math.floor(lng / TILE_SIZE) * TILE_SIZE;
-            
-            const bounds = [
-                [lat0, lng0],
-                [lat0 + TILE_SIZE, lng0 + TILE_SIZE]
-            ];
-            
-            L.rectangle(bounds, {
-                color: color,
-                fillColor: color,
-                fillOpacity: opacity,
-                weight: 0.5
-            }).addTo(tilesLayer);
-        }
-        
-        // Map click handler
-        function onMapClick(e) {
-            // Check if we're in add location mode
-            if (addLocationMode) {
-                addCustomLocation(e.latlng.lat, e.latlng.lng);
-                return;
-            }
-            
-            // Normal tile placement
-            if (Date.now() < cooldownEnd) {
-                const remaining = Math.ceil((cooldownEnd - Date.now()) / 1000);
-                showToast(`Wait ${remaining} seconds!`);
-                return;
-            }
-            
-            drawTile(e.latlng.lat, e.latlng.lng, currentColor);
-            
-            myTileCount++;
-            totalTileCount++;
-            document.getElementById('statMine').textContent = myTileCount;
-            document.getElementById('statTotal').textContent = totalTileCount;
-            
-            startCooldown();
-            
-            if (typeof gtag !== 'undefined') {
-                gtag('event', 'place_tile', {
-                    'country': currentCountry,
-                    'color': currentColor
-                });
-            }
-        }
-        
-        // Start cooldown
-        function startCooldown() {
-            cooldownEnd = Date.now() + 5000;
-            const cooldownFill = document.getElementById('cooldownFill');
-            const cooldownText = document.getElementById('cooldownText');
-            
-            const timer = setInterval(() => {
-                const remaining = cooldownEnd - Date.now();
-                if (remaining <= 0) {
-                    cooldownFill.style.width = '0%';
-                    cooldownText.textContent = 'Ready!';
-                    clearInterval(timer);
-                } else {
-                    const percent = ((5000 - remaining) / 5000) * 100;
-                    cooldownFill.style.width = percent + '%';
-                    cooldownText.textContent = Math.ceil(remaining / 1000) + 's';
-                }
-            }, 100);
-        }
-        
-        // Setup UI
-        function setupUI() {
-            const picker = document.getElementById('colorPicker');
-            const hex = document.getElementById('colorHex');
-            
-            picker.addEventListener('input', (e) => {
-                currentColor = e.target.value;
-                hex.value = e.target.value;
-            });
-            
-            hex.addEventListener('input', (e) => {
-                if (/^#[0-9a-f]{6}$/i.test(e.target.value)) {
-                    currentColor = e.target.value;
-                    picker.value = e.target.value;
-                }
-            });
-            
-            document.getElementById('countrySelect').addEventListener('change', (e) => {
-                currentCountry = e.target.value;
-            });
-            
-            document.querySelectorAll('.tab').forEach(tab => {
-                tab.addEventListener('click', () => {
-                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-                    tab.classList.add('active');
-                    loadRanking(tab.dataset.period);
-                });
-            });
-            
-            const toggleBtn = document.getElementById('togglePhotoMode');
-            const statusText = document.getElementById('photoStatus');
-            
-            if (toggleBtn) {
-                toggleBtn.addEventListener('click', () => {
-                    photoMode = !photoMode;
-                    if (photoMode) {
-                        toggleBtn.style.background = '#ff4757';
-                        toggleBtn.textContent = 'Exit Photo Mode';
-                        statusText.textContent = 'Click markers to upload photos';
-                        statusText.style.color = '#ff6b6b';
-                    } else {
-                        toggleBtn.style.background = '#667eea';
-                        toggleBtn.textContent = 'Toggle Photo Mode';
-                        statusText.textContent = 'Hover over markers to see photos';
-                        statusText.style.color = '#ffd700';
-                    }
-                });
-            }
-            
-            // Add location mode button
-            const addLocationBtn = document.getElementById('addLocationMode');
-            if (addLocationBtn) {
-                addLocationBtn.addEventListener('click', () => {
-                    addLocationMode = !addLocationMode;
-                    if (addLocationMode) {
-                        // Disable photo mode if active
-                        photoMode = false;
-                        toggleBtn.style.background = '#667eea';
-                        toggleBtn.textContent = 'Toggle Photo Mode';
-                        statusText.textContent = 'Hover over markers to see photos';
-                        statusText.style.color = '#ffd700';
-                        
-                        // Update add location button
-                        addLocationBtn.style.background = '#ff4757';
-                        addLocationBtn.textContent = 'Click map to place marker here';
-                        
-                        // Change cursor
-                        document.getElementById('map').style.cursor = 'crosshair';
-                    } else {
-                        addLocationBtn.style.background = '#22c55e';
-                        addLocationBtn.textContent = 'Click Map to Place Marker';
-                        document.getElementById('map').style.cursor = '';
-                    }
-                });
-            }
-            
-            // Load custom locations on startup
-            updateCustomLocationsList();
-            
-            const savedPhotos = localStorage.getItem('userPhotos');
-            if (savedPhotos) {
-                userPhotos = JSON.parse(savedPhotos);
-            }
-            
-            updateOnlineCount();
-            setInterval(updateOnlineCount, 5000);
-        }
-        
-        // Update online count
-        function updateOnlineCount() {
-            const online = 200 + Math.floor(Math.random() * 500);
-            document.getElementById('statOnline').textContent = online;
-        }
-        
-        // Show toast message
-        function showToast(message) {
-            const existing = document.querySelector('.toast');
-            if (existing) existing.remove();
-            
-            const toast = document.createElement('div');
-            toast.className = 'toast';
-            toast.textContent = message;
-            document.body.appendChild(toast);
-            
-            setTimeout(() => {
-                toast.style.opacity = '0';
-                setTimeout(() => toast.remove(), 300);
-            }, 3000);
-        }
-        
-        // Load ranking
-        function loadRanking(period) {
-            const demoRanking = [
-                { country: 'Japan', count: 1234 },
-                { country: 'United States', count: 987 },
-                { country: 'Korea', count: 654 },
-                { country: 'China', count: 432 },
-                { country: 'Germany', count: 321 }
-            ];
-            
-            const html = demoRanking.map((item, i) => 
-                `<li><span>${i + 1}. ${item.country}</span> <strong>${item.count}</strong></li>`
-            ).join('');
-            
-            document.getElementById('rankingList').innerHTML = html;
-        }
-        
-        // Initialize
-        document.addEventListener('DOMContentLoaded', () => {
-            console.log('Starting TePlace...');
-            initMap();
-            setupUI();
-            loadRanking('today');
-            console.log('TePlace ready!');
-        });
-    </script>
-</body>
-</html>
+        .loca
