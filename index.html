@@ -5,7 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TePlace Tokyo - Tourism Photo Map</title>
     
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+          integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+          crossorigin=""/>
     
     <style>
         * {
@@ -16,7 +19,6 @@
         
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: #f5f5f5;
             height: 100vh;
             overflow: hidden;
         }
@@ -29,7 +31,6 @@
             justify-content: space-between;
             align-items: center;
             height: 50px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
         
         .logo {
@@ -37,14 +38,17 @@
             font-weight: bold;
         }
         
-        .main-container {
+        .container {
             display: flex;
             height: calc(100vh - 50px);
+            position: relative;
         }
         
         #map {
             flex: 1;
             width: 100%;
+            height: 100%;
+            background: #e0e0e0;
         }
         
         .sidebar {
@@ -71,17 +75,21 @@
             background: #5a67d8;
         }
         
+        .btn:active {
+            transform: scale(0.98);
+        }
+        
         .place-card {
-            background: #f9f9f9;
+            background: #f5f5f5;
             border-radius: 8px;
-            padding: 12px;
+            padding: 10px;
             margin-bottom: 10px;
-            position: relative;
+            border: 1px solid #e0e0e0;
         }
         
         .place-image {
             width: 100%;
-            height: 120px;
+            height: 100px;
             object-fit: cover;
             border-radius: 5px;
             margin-bottom: 8px;
@@ -91,11 +99,11 @@
             font-weight: bold;
             margin-bottom: 5px;
             font-size: 14px;
+            color: #333;
         }
         
         .rating {
             color: #ffa500;
-            margin-bottom: 5px;
             font-size: 14px;
         }
         
@@ -107,11 +115,11 @@
             width: 100%;
             height: 100%;
             background: rgba(0,0,0,0.5);
-            z-index: 1000;
+            z-index: 9999;
         }
         
         .modal-content {
-            position: absolute;
+            position: fixed;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
@@ -132,7 +140,7 @@
             display: block;
             margin-bottom: 5px;
             font-weight: bold;
-            font-size: 14px;
+            color: #333;
         }
         
         .form-group input,
@@ -142,7 +150,6 @@
             padding: 8px;
             border: 1px solid #ddd;
             border-radius: 4px;
-            font-size: 14px;
         }
         
         .star-rating {
@@ -154,7 +161,7 @@
         
         .star {
             color: #ddd;
-            transition: color 0.2s;
+            user-select: none;
         }
         
         .star.active {
@@ -164,7 +171,7 @@
         .photo-upload {
             position: relative;
             width: 100%;
-            height: 150px;
+            height: 120px;
             border: 2px dashed #ddd;
             border-radius: 8px;
             display: flex;
@@ -173,11 +180,6 @@
             cursor: pointer;
             background: #fafafa;
             overflow: hidden;
-        }
-        
-        .photo-upload:hover {
-            border-color: #667eea;
-            background: #f5f5ff;
         }
         
         .photo-upload input {
@@ -193,27 +195,11 @@
             height: 100%;
             object-fit: cover;
             position: absolute;
-            top: 0;
-            left: 0;
         }
         
         .upload-text {
             text-align: center;
             color: #666;
-            z-index: 1;
-        }
-        
-        .delete-btn {
-            position: absolute;
-            top: 5px;
-            right: 5px;
-            background: #ff4444;
-            color: white;
-            border: none;
-            border-radius: 3px;
-            padding: 3px 8px;
-            font-size: 12px;
-            cursor: pointer;
         }
         
         @media (max-width: 768px) {
@@ -221,69 +207,41 @@
                 display: none;
             }
             
-            .mobile-menu {
+            .container {
+                flex-direction: column;
+            }
+            
+            #map {
+                height: 100%;
+            }
+            
+            .mobile-fab {
                 position: fixed;
-                bottom: 0;
-                left: 0;
-                right: 0;
-                background: white;
-                padding: 10px;
-                box-shadow: 0 -2px 4px rgba(0,0,0,0.1);
+                bottom: 20px;
+                right: 20px;
+                width: 56px;
+                height: 56px;
+                background: #667eea;
+                border-radius: 50%;
                 display: flex;
-                justify-content: space-around;
-                z-index: 999;
-            }
-            
-            .mobile-menu button {
-                background: none;
-                border: none;
+                align-items: center;
+                justify-content: center;
+                color: white;
                 font-size: 24px;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.3);
                 cursor: pointer;
-                color: #667eea;
-            }
-            
-            .main-container {
-                height: calc(100vh - 50px - 60px);
+                z-index: 1000;
             }
         }
         
-        .mobile-menu {
+        .mobile-fab {
             display: none;
         }
         
         @media (max-width: 768px) {
-            .mobile-menu {
+            .mobile-fab {
                 display: flex;
             }
-        }
-        
-        /* Popup styles */
-        .leaflet-popup-content {
-            width: 250px !important;
-        }
-        
-        .popup-image {
-            width: 100%;
-            height: 150px;
-            object-fit: cover;
-            border-radius: 5px;
-            margin-bottom: 8px;
-        }
-        
-        .popup-title {
-            font-weight: bold;
-            font-size: 16px;
-            margin-bottom: 5px;
-        }
-        
-        .popup-category {
-            display: inline-block;
-            background: #667eea;
-            color: white;
-            padding: 2px 8px;
-            border-radius: 3px;
-            font-size: 12px;
-            margin-bottom: 5px;
         }
     </style>
 </head>
@@ -291,51 +249,45 @@
     <div class="header">
         <div class="logo">🗾 TePlace Tokyo Tourism</div>
         <div>
-            <select id="categoryFilter" style="padding: 5px; border-radius: 4px;">
+            <select id="categoryFilter" style="padding: 5px; border-radius: 4px; border: 1px solid white; background: rgba(255,255,255,0.2); color: white;">
                 <option value="all">All Places</option>
-                <option value="temple">⛩️ Temples & Shrines</option>
-                <option value="landmark">🗼 Landmarks</option>
-                <option value="garden">🌸 Gardens & Parks</option>
-                <option value="museum">🏛️ Museums</option>
-                <option value="shopping">🛍️ Shopping Districts</option>
-                <option value="experience">🎭 Cultural Experience</option>
-                <option value="viewpoint">🌃 Viewpoints</option>
-                <option value="food">🍜 Food Markets</option>
+                <option value="temple">⛩️ Temple/Shrine</option>
+                <option value="landmark">🗼 Landmark</option>
+                <option value="garden">🌸 Garden/Park</option>
+                <option value="museum">🏛️ Museum</option>
+                <option value="shopping">🛍️ Shopping</option>
+                <option value="viewpoint">🌃 Viewpoint</option>
+                <option value="food">🍜 Food Market</option>
             </select>
         </div>
     </div>
     
-    <div class="main-container">
+    <div class="container">
         <div id="map"></div>
         
         <div class="sidebar">
             <h3 style="margin-bottom: 15px;">📍 Tourism Map</h3>
-            <button class="btn" onclick="openAddPlace()">+ Add Tourism Spot</button>
+            <button class="btn" id="addBtn">+ Add Tourism Spot</button>
             
             <h4 style="margin-top: 20px; margin-bottom: 10px;">Recent Spots</h4>
             <div id="placesList"></div>
         </div>
     </div>
     
-    <div class="mobile-menu">
-        <button onclick="openAddPlace()">➕</button>
-        <button onclick="showAllPlaces()">📍</button>
-        <button onclick="showTopRated()">⭐</button>
-        <button onclick="showMyPhotos()">📷</button>
-    </div>
+    <div class="mobile-fab" id="mobileFab">+</div>
     
-    <div class="modal" id="addPlaceModal">
+    <div class="modal" id="modal">
         <div class="modal-content">
-            <h3 style="margin-bottom: 15px;">Add Tourism Spot</h3>
+            <h3>Add Tourism Spot</h3>
             
             <div class="form-group">
                 <label>📷 Photo</label>
-                <div class="photo-upload" id="photoUploadArea">
-                    <input type="file" id="photoInput" accept="image/*" onchange="previewPhoto(event)">
+                <div class="photo-upload">
+                    <input type="file" id="photoInput" accept="image/*">
                     <img id="photoPreview" class="photo-preview" style="display: none;">
                     <div class="upload-text" id="uploadText">
-                        <div style="font-size: 32px;">📷</div>
-                        <div>Click to upload photo</div>
+                        <div>📷</div>
+                        <div>Click to upload</div>
                     </div>
                 </div>
             </div>
@@ -352,8 +304,7 @@
                     <option value="landmark">🗼 Landmark</option>
                     <option value="garden">🌸 Garden/Park</option>
                     <option value="museum">🏛️ Museum</option>
-                    <option value="shopping">🛍️ Shopping District</option>
-                    <option value="experience">🎭 Cultural Experience</option>
+                    <option value="shopping">🛍️ Shopping</option>
                     <option value="viewpoint">🌃 Viewpoint</option>
                     <option value="food">🍜 Food Market</option>
                 </select>
@@ -361,7 +312,7 @@
             
             <div class="form-group">
                 <label>Rating</label>
-                <div class="star-rating" id="starRating">
+                <div class="star-rating">
                     <span class="star" data-rating="1">★</span>
                     <span class="star" data-rating="2">★</span>
                     <span class="star" data-rating="3">★</span>
@@ -372,251 +323,218 @@
             
             <div class="form-group">
                 <label>Description</label>
-                <textarea id="reviewText" rows="3" placeholder="What makes this place special?"></textarea>
+                <textarea id="description" rows="3" placeholder="What makes this place special?"></textarea>
             </div>
             
-            <button class="btn" onclick="savePlace()">Save Spot</button>
-            <button class="btn" style="background: #999;" onclick="closeModal()">Cancel</button>
+            <button class="btn" id="saveBtn">Save Spot</button>
+            <button class="btn" style="background: #999;" id="cancelBtn">Cancel</button>
         </div>
     </div>
     
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+            integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+            crossorigin=""></script>
     
     <script>
-        let map;
-        let markers = [];
-        let places = [];
-        let selectedRating = 0;
-        let clickedLocation = null;
-        let selectedPhoto = null;
-        
-        // Category settings
-        const categoryEmojis = {
-            temple: '⛩️',
-            landmark: '🗼',
-            garden: '🌸',
-            museum: '🏛️',
-            shopping: '🛍️',
-            experience: '🎭',
-            viewpoint: '🌃',
-            food: '🍜'
-        };
-        
-        const categoryColors = {
-            temple: '#e74c3c',
-            landmark: '#3498db',
-            garden: '#2ecc71',
-            museum: '#9b59b6',
-            shopping: '#f39c12',
-            experience: '#e67e22',
-            viewpoint: '#34495e',
-            food: '#16a085'
-        };
-        
-        // Initialize map
-        function initMap() {
-            map = L.map('map').setView([35.6762, 139.6503], 13);
+        // Wait for DOM to load
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Initializing TePlace Tokyo...');
             
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '© OpenStreetMap contributors'
-            }).addTo(map);
+            // Global variables
+            let map = null;
+            let places = [];
+            let markers = [];
+            let selectedRating = 0;
+            let selectedPhoto = null;
+            let clickedLocation = null;
             
-            map.on('click', function(e) {
-                clickedLocation = e.latlng;
-                openAddPlace();
+            // Initialize map
+            try {
+                map = L.map('map').setView([35.6762, 139.6503], 12);
+                
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    maxZoom: 19,
+                    attribution: '© OpenStreetMap contributors'
+                }).addTo(map);
+                
+                console.log('Map initialized successfully');
+                
+                // Map click handler
+                map.on('click', function(e) {
+                    clickedLocation = e.latlng;
+                    openModal();
+                });
+                
+            } catch(error) {
+                console.error('Map initialization error:', error);
+                document.getElementById('map').innerHTML = '<div style="padding: 20px;">Error loading map. Please refresh the page.</div>';
+            }
+            
+            // Load saved places
+            loadPlaces();
+            
+            // Event listeners
+            document.getElementById('addBtn').addEventListener('click', openModal);
+            document.getElementById('mobileFab').addEventListener('click', openModal);
+            document.getElementById('saveBtn').addEventListener('click', savePlace);
+            document.getElementById('cancelBtn').addEventListener('click', closeModal);
+            document.getElementById('modal').addEventListener('click', function(e) {
+                if (e.target === this) closeModal();
             });
             
-            loadPlaces();
-        }
-        
-        // Load places from localStorage
-        function loadPlaces() {
-            const saved = localStorage.getItem('tourism_places');
-            if (saved) {
-                places = JSON.parse(saved);
+            // Photo upload
+            document.getElementById('photoInput').addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        selectedPhoto = e.target.result;
+                        document.getElementById('photoPreview').src = e.target.result;
+                        document.getElementById('photoPreview').style.display = 'block';
+                        document.getElementById('uploadText').style.display = 'none';
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+            
+            // Star rating
+            document.querySelectorAll('.star').forEach(star => {
+                star.addEventListener('click', function() {
+                    selectedRating = parseInt(this.dataset.rating);
+                    updateStars();
+                });
+            });
+            
+            // Category filter
+            document.getElementById('categoryFilter').addEventListener('change', function() {
+                displayPlaces();
+            });
+            
+            // Functions
+            function loadPlaces() {
+                const saved = localStorage.getItem('tourism_places');
+                if (saved) {
+                    places = JSON.parse(saved);
+                } else {
+                    // Add default places
+                    places = [
+                        {
+                            id: 1,
+                            name: 'Sensoji Temple',
+                            category: 'temple',
+                            lat: 35.7148,
+                            lng: 139.7967,
+                            rating: 5,
+                            description: 'Historic temple in Asakusa'
+                        },
+                        {
+                            id: 2,
+                            name: 'Tokyo Tower',
+                            category: 'landmark',
+                            lat: 35.6586,
+                            lng: 139.7454,
+                            rating: 4,
+                            description: 'Iconic red tower'
+                        }
+                    ];
+                }
                 displayPlaces();
             }
             
-            // Add default tourism spots
-            if (places.length === 0) {
-                addDefaultPlaces();
-            }
-        }
-        
-        // Add default Tokyo tourism spots
-        function addDefaultPlaces() {
-            const defaults = [
-                {
-                    id: Date.now(),
-                    name: 'Sensoji Temple',
-                    category: 'temple',
-                    lat: 35.7148,
-                    lng: 139.7967,
-                    rating: 5,
-                    review: 'Tokyo\'s oldest temple with beautiful architecture and traditional shopping street',
-                    photo: null
-                },
-                {
-                    id: Date.now() + 1,
-                    name: 'Tokyo Tower',
-                    category: 'landmark',
-                    lat: 35.6586,
-                    lng: 139.7454,
-                    rating: 5,
-                    review: 'Iconic landmark with amazing city views',
-                    photo: null
-                },
-                {
-                    id: Date.now() + 2,
-                    name: 'Shinjuku Gyoen',
-                    category: 'garden',
-                    lat: 35.6852,
-                    lng: 139.7100,
-                    rating: 5,
-                    review: 'Beautiful garden perfect for cherry blossom viewing',
-                    photo: null
-                }
-            ];
-            
-            places = defaults;
-            savePlaces();
-            displayPlaces();
-        }
-        
-        // Display places on map
-        function displayPlaces() {
-            // Clear existing markers
-            markers.forEach(m => map.removeLayer(m));
-            markers = [];
-            
-            // Filter places
-            const filter = document.getElementById('categoryFilter').value;
-            const filtered = filter === 'all' ? places : places.filter(p => p.category === filter);
-            
-            // Add new markers
-            filtered.forEach(place => {
-                const icon = L.divIcon({
-                    html: `<div style="background: ${categoryColors[place.category]}; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 18px; box-shadow: 0 2px 4px rgba(0,0,0,0.3);">${categoryEmojis[place.category]}</div>`,
-                    className: 'custom-marker',
-                    iconSize: [36, 36]
+            function displayPlaces() {
+                // Clear markers
+                markers.forEach(m => map.removeLayer(m));
+                markers = [];
+                
+                const filter = document.getElementById('categoryFilter').value;
+                const filtered = filter === 'all' ? places : places.filter(p => p.category === filter);
+                
+                // Add markers
+                filtered.forEach(place => {
+                    const marker = L.marker([place.lat, place.lng])
+                        .addTo(map)
+                        .bindPopup(`
+                            <div style="min-width: 200px;">
+                                ${place.photo ? `<img src="${place.photo}" style="width:100%;height:100px;object-fit:cover;border-radius:5px;margin-bottom:8px;">` : ''}
+                                <b>${place.name}</b><br>
+                                ${'★'.repeat(place.rating)}<br>
+                                ${place.description || ''}
+                            </div>
+                        `);
+                    markers.push(marker);
                 });
                 
-                const popupContent = `
-                    <div style="min-width: 200px;">
-                        ${place.photo ? `<img src="${place.photo}" class="popup-image">` : ''}
-                        <div class="popup-title">${place.name}</div>
-                        <div class="popup-category">${categoryEmojis[place.category]} ${place.category}</div>
+                updateList();
+            }
+            
+            function updateList() {
+                const list = document.getElementById('placesList');
+                const recent = places.slice(-5).reverse();
+                
+                list.innerHTML = recent.map(place => `
+                    <div class="place-card">
+                        ${place.photo ? `<img src="${place.photo}" class="place-image">` : ''}
+                        <div class="place-title">${place.name}</div>
                         <div class="rating">${'★'.repeat(place.rating)}</div>
-                        <p style="font-size: 13px; color: #666; margin-top: 8px;">${place.review || ''}</p>
-                        <button onclick="deletePlace(${place.id})" class="delete-btn">Delete</button>
                     </div>
-                `;
-                
-                const marker = L.marker([place.lat, place.lng], {icon})
-                    .addTo(map)
-                    .bindPopup(popupContent);
-                
-                markers.push(marker);
-            });
+                `).join('') || '<p style="color: #999;">No places yet</p>';
+            }
             
-            updatePlacesList();
-        }
-        
-        // Update places list in sidebar
-        function updatePlacesList() {
-            const list = document.getElementById('placesList');
-            const recent = places.slice(-5).reverse();
+            function openModal() {
+                if (!clickedLocation) {
+                    alert('Please click on the map first');
+                    return;
+                }
+                document.getElementById('modal').style.display = 'block';
+            }
             
-            list.innerHTML = recent.map(place => `
-                <div class="place-card">
-                    ${place.photo ? `<img src="${place.photo}" class="place-image">` : ''}
-                    <div class="place-title">${categoryEmojis[place.category]} ${place.name}</div>
-                    <div class="rating">${'★'.repeat(place.rating)}</div>
-                    <div style="font-size: 12px; color: #666;">${place.review || ''}</div>
-                </div>
-            `).join('');
-        }
-        
-        // Photo preview
-        function previewPhoto(event) {
-            const file = event.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    selectedPhoto = e.target.result;
-                    document.getElementById('photoPreview').src = e.target.result;
-                    document.getElementById('photoPreview').style.display = 'block';
-                    document.getElementById('uploadText').style.display = 'none';
+            function closeModal() {
+                document.getElementById('modal').style.display = 'none';
+                // Reset form
+                document.getElementById('placeName').value = '';
+                document.getElementById('description').value = '';
+                document.getElementById('photoPreview').style.display = 'none';
+                document.getElementById('uploadText').style.display = 'block';
+                selectedPhoto = null;
+                selectedRating = 0;
+                updateStars();
+            }
+            
+            function savePlace() {
+                const name = document.getElementById('placeName').value;
+                const category = document.getElementById('placeCategory').value;
+                const description = document.getElementById('description').value;
+                
+                if (!name || !selectedRating) {
+                    alert('Please enter name and rating');
+                    return;
+                }
+                
+                const newPlace = {
+                    id: Date.now(),
+                    name,
+                    category,
+                    lat: clickedLocation.lat,
+                    lng: clickedLocation.lng,
+                    rating: selectedRating,
+                    description,
+                    photo: selectedPhoto
                 };
-                reader.readAsDataURL(file);
-            }
-        }
-        
-        // Open add place modal
-        function openAddPlace() {
-            document.getElementById('addPlaceModal').style.display = 'block';
-            
-            if (!clickedLocation) {
-                alert('Please click on the map first to select location');
+                
+                places.push(newPlace);
+                localStorage.setItem('tourism_places', JSON.stringify(places));
+                displayPlaces();
                 closeModal();
-            }
-        }
-        
-        // Close modal
-        function closeModal() {
-            document.getElementById('addPlaceModal').style.display = 'none';
-            // Reset form
-            document.getElementById('placeName').value = '';
-            document.getElementById('reviewText').value = '';
-            document.getElementById('photoPreview').style.display = 'none';
-            document.getElementById('uploadText').style.display = 'block';
-            document.getElementById('photoInput').value = '';
-            selectedRating = 0;
-            selectedPhoto = null;
-            updateStars();
-        }
-        
-        // Save place
-        function savePlace() {
-            const name = document.getElementById('placeName').value;
-            const category = document.getElementById('placeCategory').value;
-            const review = document.getElementById('reviewText').value;
-            
-            if (!name || selectedRating === 0) {
-                alert('Please enter name and rating');
-                return;
+                clickedLocation = null;
             }
             
-            if (!clickedLocation) {
-                alert('Please select location on map');
-                return;
+            function updateStars() {
+                document.querySelectorAll('.star').forEach((star, i) => {
+                    star.classList.toggle('active', i < selectedRating);
+                });
             }
-            
-            const newPlace = {
-                id: Date.now(),
-                name,
-                category,
-                lat: clickedLocation.lat,
-                lng: clickedLocation.lng,
-                rating: selectedRating,
-                review,
-                photo: selectedPhoto,
-                date: new Date().toISOString()
-            };
-            
-            places.push(newPlace);
-            savePlaces();
-            displayPlaces();
-            closeModal();
-            clickedLocation = null;
-        }
-        
-        // Save to localStorage
-        function savePlaces() {
-            localStorage.setItem('tourism_places', JSON.stringify(places));
-        }
-        
-        // Delete place
-        function deletePlace(id) {
-            if (confirm('Delete this spot?')) {
-                places = places.filter(p => p.id !== 
+        });
+    </script>
+</body>
+</html>
