@@ -1,25 +1,28 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ja">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TePlace - World Map Game</title>
+    <meta name="description" content="岐阜県美濃市の婦人服専門店 イチヒロ。上質なファッションとおもてなしで、お客様の美しさを引き出します。">
     
-    <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-4F90EG7W7N"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-      gtag('config', 'G-4F90EG7W7N');
-    </script>
+    <!-- OGP Tags -->
+    <meta property="og:title" content="ICHIHIRO - ブティック イチヒロ | 美濃市の婦人服専門店">
+    <meta property="og:description" content="岐阜県美濃市の婦人服専門店。カジュアルからフォーマルまで幅広いコレクション">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://ichihi.onrender.com/">
+    <meta property="og:site_name" content="ICHIHIRO">
     
-    <!-- Leaflet CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" 
-          integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" 
-          crossorigin=""/>
+    <title>ICHIHIRO - ブティック イチヒロ | 美濃市の婦人服専門店</title>
     
+    <!-- Font Awesome for Social Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <!-- Main CSS -->
+    <link rel="stylesheet" href="style.css">
+    
+    <!-- Inline Critical Styles -->
     <style>
+        /* Critical CSS for faster initial load */
         * {
             margin: 0;
             padding: 0;
@@ -27,594 +30,368 @@
         }
         
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
-            background: #1a1a2e;
-            color: #fff;
+            font-family: 'Noto Sans JP', -apple-system, sans-serif;
+            color: #1a1a1a;
+            overflow-x: hidden;
+        }
+        
+        /* モダンロゴスタイル */
+        .logo-header {
+            display: inline-block;
+            transition: transform 0.3s ease;
+        }
+        
+        .logo-header:hover {
+            transform: translateY(-2px) scale(1.02);
+        }
+        
+        /* ヒーロー背景画像 */
+        .hero {
+            position: relative;
             height: 100vh;
+            min-height: 600px;
             overflow: hidden;
         }
         
-        .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            padding: 10px 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
-            height: 60px;
-        }
-        
-        .logo {
-            font-size: 24px;
-            font-weight: bold;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .controls {
-            display: flex;
-            gap: 15px;
-            align-items: center;
-        }
-        
-        select {
-            padding: 8px 15px;
-            border-radius: 5px;
-            border: none;
-            background: rgba(255,255,255,0.9);
-            color: #333;
-            font-size: 14px;
-            cursor: pointer;
-        }
-        
-        .container {
-            display: flex;
-            height: calc(100vh - 60px);
-        }
-        
-        #map {
-            flex: 1;
-            height: 100%;
-            background: #f0f0f0;
-        }
-        
-        .sidebar {
-            width: 320px;
-            background: #0f3460;
-            padding: 20px;
-            overflow-y: auto;
-            box-shadow: -2px 0 10px rgba(0,0,0,0.3);
-        }
-        
-        .panel {
-            background: rgba(255,255,255,0.1);
-            border-radius: 10px;
-            padding: 15px;
-            margin-bottom: 20px;
-        }
-        
-        .panel h3 {
-            margin-bottom: 10px;
-            font-size: 18px;
-            color: #ffd700;
-        }
-        
-        .color-controls {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-            margin-top: 10px;
-        }
-        
-        .color-picker {
-            width: 50px;
-            height: 50px;
-            border: 3px solid #fff;
-            border-radius: 50%;
-            cursor: pointer;
-        }
-        
-        .color-hex {
-            flex: 1;
-            padding: 8px;
-            border-radius: 5px;
-            border: 1px solid rgba(255,255,255,0.3);
-            background: rgba(255,255,255,0.1);
-            color: #fff;
-            font-family: monospace;
-        }
-        
-        .tabs {
-            display: flex;
-            gap: 5px;
-            margin-bottom: 10px;
-        }
-        
-        .tab {
-            flex: 1;
-            padding: 8px;
-            background: rgba(255,255,255,0.1);
-            border: none;
-            color: #fff;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-        
-        .tab.active {
-            background: #667eea;
-        }
-        
-        .ranking-list {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-        
-        .ranking-list li {
-            display: flex;
-            justify-content: space-between;
-            padding: 8px 0;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-        }
-        
-        .ranking-list strong {
-            color: #ffd700;
-        }
-        
-        .stats {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 10px;
-            margin-top: 10px;
-        }
-        
-        .stat {
-            text-align: center;
-            padding: 10px;
-            background: rgba(255,255,255,0.1);
-            border-radius: 5px;
-        }
-        
-        .stat-value {
-            font-size: 24px;
-            font-weight: bold;
-            color: #4caf50;
-        }
-        
-        .stat-label {
-            font-size: 12px;
-            color: rgba(255,255,255,0.7);
-            margin-top: 5px;
-        }
-        
-        .cooldown {
-            margin-top: 10px;
-            padding: 10px;
-            background: rgba(255,255,255,0.1);
-            border-radius: 5px;
-            text-align: center;
-        }
-        
-        .cooldown-bar {
+        .hero-bg-image {
+            position: absolute;
+            top: 0;
+            left: 0;
             width: 100%;
-            height: 10px;
-            background: rgba(0,0,0,0.3);
-            border-radius: 5px;
-            overflow: hidden;
-            margin: 10px 0;
-        }
-        
-        .cooldown-fill {
             height: 100%;
-            background: linear-gradient(90deg, #4caf50, #8bc34a);
-            width: 0%;
-            transition: width 0.1s linear;
+            z-index: 1;
         }
         
-        @media (max-width: 768px) {
-            .container {
-                flex-direction: column;
-            }
-            
-            #map {
-                height: 60vh;
-            }
-            
-            .sidebar {
-                width: 100%;
-                height: 40vh;
-                padding: 10px;
-            }
-            
-            .header {
-                padding: 10px;
-            }
-            
-            .logo {
-                font-size: 18px;
-            }
-            
-            .controls {
-                gap: 10px;
-            }
-            
-            select {
-                padding: 5px 10px;
-                font-size: 12px;
-            }
+        .hero-bg-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            filter: brightness(0.6) contrast(1.1);
+            animation: slowZoom 20s ease-in-out infinite alternate;
         }
         
-        .toast {
-            position: fixed;
-            top: 80px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #4caf50;
-            color: white;
-            padding: 12px 24px;
-            border-radius: 5px;
-            box-shadow: 0 3px 10px rgba(0,0,0,0.3);
-            z-index: 10000;
-            animation: slideIn 0.3s ease;
+        @keyframes slowZoom {
+            0% { transform: scale(1); }
+            100% { transform: scale(1.05); }
         }
         
-        @keyframes slideIn {
-            from {
-                top: 60px;
-                opacity: 0;
-            }
-            to {
-                top: 80px;
-                opacity: 1;
-            }
+        .hero-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(ellipse at center, 
+                        rgba(0,0,0,0.3) 0%, 
+                        rgba(0,0,0,0.5) 50%, 
+                        rgba(0,0,0,0.7) 100%);
+            z-index: 2;
+        }
+        
+        .hero-content {
+            position: relative;
+            z-index: 3;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            padding: 2rem;
+            animation: heroFadeIn 1.5s ease-out;
+        }
+        
+        @keyframes heroFadeIn {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
         }
     </style>
 </head>
 <body>
-    <div class="header">
-        <div class="logo">
-            🌍 TePlace
+    <!-- ヘッダー -->
+    <header id="header">
+        <nav class="navbar">
+            <!-- モダンヘッダーロゴ -->
+            <a href="#" class="logo-header">
+                <svg width="160" height="45" viewBox="0 0 160 45" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <linearGradient id="angleGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" style="stop-color:#000000;stop-opacity:1" />
+                            <stop offset="100%" style="stop-color:#1a1a1a;stop-opacity:1" />
+                        </linearGradient>
+                    </defs>
+                    <path d="M 10 10 L 150 10 L 150 30 L 140 35 L 10 35 Z" fill="url(#angleGradient)"/>
+                    <rect x="10" y="33" width="130" height="0.5" fill="#d4af37" opacity="0.8"/>
+                    <text x="80" y="26" font-family="Futura, Helvetica Neue, sans-serif" font-size="16" font-weight="300" fill="#ffffff" text-anchor="middle" letter-spacing="4">ICHIHIRO</text>
+                </svg>
+            </a>
+            
+            <ul class="nav-menu">
+                <li><a href="#concept">CONCEPT</a></li>
+                <li><a href="#floor">FLOOR</a></li>
+                <li><a href="#brands">BRANDS</a></li>
+                <li><a href="#reservation">RESERVATION</a></li>
+                <li><a href="#access">ACCESS</a></li>
+                <li><a href="#contact">CONTACT</a></li>
+            </ul>
+            
+            <div class="menu-toggle" id="mobile-menu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </nav>
+    </header>
+
+    <!-- ヒーローセクション -->
+    <section class="hero">
+        <!-- 背景画像 -->
+        <div class="hero-bg-image">
+            <img src="images/store-interior1.jpg.jpg" alt="イチヒロ店内" onerror="this.style.background='linear-gradient(135deg, #1a1a1a, #333)'">
         </div>
-        <div class="controls">
-            <select id="countrySelect">
-                <option value="Japan">Japan</option>
-                <option value="United States">United States</option>
-                <option value="Korea">Korea</option>
-                <option value="China">China</option>
-                <option value="United Kingdom">United Kingdom</option>
-                <option value="France">France</option>
-                <option value="Germany">Germany</option>
-                <option value="Brazil">Brazil</option>
-            </select>
-        </div>
-    </div>
-    
-    <div class="container">
-        <div id="map"></div>
         
-        <div class="sidebar">
-            <div class="panel">
-                <h3>📊 Statistics</h3>
-                <div class="stats">
-                    <div class="stat">
-                        <div class="stat-value" id="statTotal">0</div>
-                        <div class="stat-label">Total</div>
-                    </div>
-                    <div class="stat">
-                        <div class="stat-value" id="statMine">0</div>
-                        <div class="stat-label">Yours</div>
-                    </div>
-                    <div class="stat">
-                        <div class="stat-value" id="statOnline">0</div>
-                        <div class="stat-label">Online</div>
-                    </div>
-                </div>
+        <!-- オーバーレイ -->
+        <div class="hero-overlay"></div>
+        
+        <!-- コンテンツ -->
+        <div class="hero-content">
+            <!-- メインロゴ -->
+            <div class="logo-main">
+                <svg width="400" height="120" viewBox="0 0 400 120" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <linearGradient id="metallic" x1="0%" y1="0%" x2="100%" y2="0%">
+                            <stop offset="0%" style="stop-color:#ffffff;stop-opacity:0.9" />
+                            <stop offset="50%" style="stop-color:#ffffff;stop-opacity:1" />
+                            <stop offset="100%" style="stop-color:#ffffff;stop-opacity:0.9" />
+                        </linearGradient>
+                        <filter id="outline">
+                            <feGaussianBlur stdDeviation="2"/>
+                            <feOffset dx="0" dy="4"/>
+                            <feFlood flood-color="#000000" flood-opacity="0.3"/>
+                            <feComposite operator="over"/>
+                            <feComposite in="SourceGraphic"/>
+                        </filter>
+                    </defs>
+                    <rect x="30" y="30" width="340" height="60" fill="none" stroke="#d4af37" stroke-width="0.5" opacity="0.4"/>
+                    <rect x="20" y="35" width="360" height="50" fill="url(#metallic)" filter="url(#outline)"/>
+                    <polygon points="20,35 30,25 30,35" fill="#d4af37" opacity="0.6"/>
+                    <polygon points="380,35 370,25 370,35" fill="#d4af37" opacity="0.6"/>
+                    <polygon points="20,85 30,95 30,85" fill="#d4af37" opacity="0.6"/>
+                    <polygon points="380,85 370,95 370,85" fill="#d4af37" opacity="0.6"/>
+                    <text x="200" y="66" font-family="Optima, Didot, Georgia, serif" font-size="38" font-weight="300" fill="#1a1a1a" text-anchor="middle" letter-spacing="8">ICHIHIRO</text>
+                    <text x="200" y="102" font-family="Futura, sans-serif" font-size="8" font-weight="300" fill="#1a1a1a" text-anchor="middle" letter-spacing="5" opacity="0.6">BOUTIQUE MINO</text>
+                </svg>
             </div>
             
-            <div class="panel">
-                <h3>🎨 Color</h3>
-                <div class="color-controls">
-                    <input type="color" class="color-picker" id="colorPicker" value="#ff4444">
-                    <input type="text" class="color-hex" id="colorHex" value="#ff4444">
-                </div>
+            <!-- タグライン -->
+            <div class="tagline-wrapper" style="margin-top: 2rem;">
+                <p style="color: rgba(255,255,255,0.95); font-size: 1.1rem; letter-spacing: 0.2em;">美濃市の婦人服専門店</p>
             </div>
             
-            <div class="panel">
-                <h3>🏆 World Ranking</h3>
-                <div class="tabs">
-                    <button class="tab active" data-period="today">Today</button>
-                    <button class="tab" data-period="week">Week</button>
-                    <button class="tab" data-period="month">Month</button>
+            <!-- CTAボタン -->
+            <a href="#brands" class="cta-button" style="margin-top: 2rem; padding: 1rem 2.5rem; background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.3); border-radius: 50px; color: white; text-decoration: none; display: inline-flex; align-items: center; gap: 1rem; transition: all 0.3s;">
+                <span>COLLECTION</span>
+                <i class="fas fa-chevron-down"></i>
+            </a>
+        </div>
+    </section>
+
+    <!-- コンセプト -->
+    <section id="concept" class="concept fade-in">
+        <div class="container">
+            <h2 class="section-title">CONCEPT</h2>
+            <p class="section-subtitle">私たちの想い</p>
+            <div class="concept-content">
+                <div class="concept-text">
+                    <h3>地域に愛される店舗として</h3>
+                    <p>イチヒロは、岐阜県美濃市で長年にわたり婦人服専門店として営業しております。地域の皆様に愛され、支えられながら、上質なファッションをお届けしてまいりました。</p>
+                    <p>1階のカジュアルリッチなコレクションから、2階のラグジュアリーラインまで、幅広い年代の女性に向けた洗練されたスタイルをご提案いたします。</p>
+                    <p>純白のタイルで統一された明るく開放的な店内は、ゆったりとしたショッピングをお楽しみいただける空間となっております。</p>
                 </div>
-                <ul class="ranking-list" id="rankingList">
-                    <li>Loading...</li>
-                </ul>
-            </div>
-            
-            <div class="panel">
-                <h3>⏱️ Cooldown</h3>
-                <div class="cooldown">
-                    <div id="cooldownText">Ready!</div>
-                    <div class="cooldown-bar">
-                        <div class="cooldown-fill" id="cooldownFill"></div>
-                    </div>
+                <div class="concept-image">
+                    <img src="images/store-interior1.jpg.jpg" alt="イチヒロ店内" onerror="this.style.display='none'">
                 </div>
             </div>
         </div>
-    </div>
-    
-    <!-- Leaflet JS -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" 
-            integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" 
-            crossorigin=""></script>
-    
-    <script>
-        // グローバル変数
-        let map = null;
-        let tilesLayer = null;
-        let currentCountry = 'Japan';
-        let currentColor = '#ff4444';
-        let cooldownEnd = 0;
-        let myTileCount = 0;
-        let totalTileCount = 0;
-        
-        // タイルサイズ
-        const TILE_SIZE = 0.0003;
-        
-        // 地図の初期化
-        function initMap() {
-            try {
-                console.log('Initializing map...');
-                
-                // 地図を作成 - 東京にフォーカス
-                map = L.map('map', {
-                    center: [35.6762, 139.6503],
-                    zoom: 12,
-                    zoomControl: true
-                });
-                
-                // OpenStreetMapタイルレイヤーを追加
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    maxZoom: 19,
-                    attribution: '© OpenStreetMap contributors'
-                }).addTo(map);
-                
-                // タイル描画用レイヤー
-                tilesLayer = L.layerGroup().addTo(map);
-                
-                // クリックイベントを設定
-                map.on('click', onMapClick);
-                
-                console.log('Map initialized successfully');
-                
-                // 東京にピクセルアートを描画
-                setTimeout(() => {
-                    drawTokyoPixelArt();
-                }, 1000);
-                
-            } catch (error) {
-                console.error('Error initializing map:', error);
-            }
-        }
-        
-        // タイル描画
-        function drawTile(lat, lng, color, opacity = 0.7) {
-            const lat0 = Math.floor(lat / TILE_SIZE) * TILE_SIZE;
-            const lng0 = Math.floor(lng / TILE_SIZE) * TILE_SIZE;
+    </section>
+
+    <!-- フロアガイド -->
+    <section id="floor" class="floor-guide fade-in">
+        <div class="container">
+            <h2 class="section-title">FLOOR GUIDE</h2>
+            <p class="section-subtitle">フロアのご案内</p>
             
-            const bounds = [
-                [lat0, lng0],
-                [lat0 + TILE_SIZE, lng0 + TILE_SIZE]
-            ];
+            <div class="store-gallery">
+                <div class="gallery-grid">
+                    <div class="gallery-item main">
+                        <img src="images/store-floor1.jpg.jpg" alt="1階フロア" onerror="this.style.display='none'">
+                        <div class="gallery-caption">1F カジュアルフロア</div>
+                    </div>
+                    <div class="gallery-item">
+                        <img src="images/store-floor2.jpg.jpg" alt="2階フロア" onerror="this.style.display='none'">
+                        <div class="gallery-caption">2F ラグジュアリーフロア</div>
+                    </div>
+                    <div class="gallery-item">
+                        <img src="images/store-night.jpg.jpg" alt="店舗入口" onerror="this.style.display='none'">
+                        <div class="gallery-caption">エントランス</div>
+                    </div>
+                </div>
+            </div>
             
-            const rect = L.rectangle(bounds, {
-                color: color,
-                fillColor: color,
-                fillOpacity: opacity,
-                weight: 0.5
-            });
-            
-            rect.addTo(tilesLayer);
-            return rect;
-        }
-        
-        // 東京にピクセルアートを描画
-        function drawTokyoPixelArt() {
-            // 東京タワー
-            const tokyoTower = [
-                ['', '#ff0000', ''],
-                ['#ff0000', '#ff0000', '#ff0000'],
-                ['', '#ff0000', ''],
-                ['#ff0000', '#ff0000', '#ff0000'],
-                ['', '#ff0000', '']
-            ];
-            drawPattern(35.6586, 139.7454, tokyoTower);
-            
-            // 富士山
-            const mtFuji = [
-                ['', '', '#ffffff', '', ''],
-                ['', '#ffffff', '#ffffff', '#ffffff', ''],
-                ['#4169e1', '#ffffff', '#ffffff', '#ffffff', '#4169e1'],
-                ['#4169e1', '#4169e1', '#4169e1', '#4169e1', '#4169e1']
-            ];
-            drawPattern(35.6700, 139.7000, mtFuji);
-            
-            // 桜
-            const sakura = [
-                ['', '#ffb7c5', '#ffb7c5', '#ffb7c5', ''],
-                ['#ffb7c5', '#ff69b4', '#ff69b4', '#ff69b4', '#ffb7c5'],
-                ['', '', '#8b4513', '', ''],
-                ['', '', '#8b4513', '', '']
-            ];
-            drawPattern(35.6800, 139.7600, sakura);
-            
-            // 寿司
-            const sushi = [
-                ['', '#ff6347', '#ff6347', ''],
-                ['#ffffff', '#ffffff', '#ffffff', '#ffffff']
-            ];
-            drawPattern(35.6500, 139.7300, sushi);
-            
-            // 新幹線
-            const shinkansen = [
-                ['#4169e1', '#4169e1', '#4169e1', '#4169e1', '#4169e1'],
-                ['#ffffff', '#4169e1', '#ffffff', '#4169e1', '#ffffff']
-            ];
-            drawPattern(35.6850, 139.7400, shinkansen);
-            
-            totalTileCount = 50; // 初期タイル数
-            document.getElementById('statTotal').textContent = totalTileCount;
-        }
-        
-        // パターン描画ヘルパー
-        function drawPattern(baseLat, baseLng, pattern) {
-            pattern.forEach((row, y) => {
-                row.forEach((color, x) => {
-                    if (color && color !== '') {
-                        const lat = baseLat - (y * TILE_SIZE * 1.5);
-                        const lng = baseLng + (x * TILE_SIZE * 1.5);
-                        drawTile(lat, lng, color, 0.9);
-                    }
-                });
-            });
-        }
-        
-        // 地図クリック処理
-        function onMapClick(e) {
-            // クールダウンチェック
-            if (Date.now() < cooldownEnd) {
-                const remaining = Math.ceil((cooldownEnd - Date.now()) / 1000);
-                showToast(`Wait ${remaining} seconds!`);
-                return;
-            }
-            
-            // タイル描画
-            drawTile(e.latlng.lat, e.latlng.lng, currentColor);
-            
-            // カウント更新
-            myTileCount++;
-            totalTileCount++;
-            document.getElementById('statMine').textContent = myTileCount;
-            document.getElementById('statTotal').textContent = totalTileCount;
-            
-            // クールダウン開始
-            startCooldown();
-            
-            // Google Analytics イベント
-            if (typeof gtag !== 'undefined') {
-                gtag('event', 'place_tile', {
-                    'country': currentCountry,
-                    'color': currentColor
-                });
-            }
-        }
-        
-        // クールダウン処理
-        function startCooldown() {
-            cooldownEnd = Date.now() + 5000; // 5秒
-            const cooldownFill = document.getElementById('cooldownFill');
-            const cooldownText = document.getElementById('cooldownText');
-            
-            const timer = setInterval(() => {
-                const remaining = cooldownEnd - Date.now();
-                if (remaining <= 0) {
-                    cooldownFill.style.width = '0%';
-                    cooldownText.textContent = 'Ready!';
-                    clearInterval(timer);
-                } else {
-                    const percent = ((5000 - remaining) / 5000) * 100;
-                    cooldownFill.style.width = percent + '%';
-                    cooldownText.textContent = Math.ceil(remaining / 1000) + 's';
-                }
-            }, 100);
-        }
-        
-        // UI設定
-        function setupUI() {
-            // カラーピッカー
-            const picker = document.getElementById('colorPicker');
-            const hex = document.getElementById('colorHex');
-            
-            picker.addEventListener('input', (e) => {
-                currentColor = e.target.value;
-                hex.value = e.target.value;
-            });
-            
-            hex.addEventListener('input', (e) => {
-                if (/^#[0-9a-f]{6}$/i.test(e.target.value)) {
-                    currentColor = e.target.value;
-                    picker.value = e.target.value;
-                }
-            });
-            
-            // 国選択
-            document.getElementById('countrySelect').addEventListener('change', (e) => {
-                currentCountry = e.target.value;
-            });
-            
-            // タブ切り替え
-            document.querySelectorAll('.tab').forEach(tab => {
-                tab.addEventListener('click', () => {
-                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-                    tab.classList.add('active');
-                    loadRanking(tab.dataset.period);
-                });
-            });
-            
-            // オンラインカウンター更新
-            updateOnlineCount();
-            setInterval(updateOnlineCount, 5000);
-        }
-        
-        // オンラインカウント更新
-        function updateOnlineCount() {
-            const online = 200 + Math.floor(Math.random() * 500);
-            document.getElementById('statOnline').textContent = online;
-        }
-        
-        // トースト表示
-        function showToast(message) {
-            const existing = document.querySelector('.toast');
-            if (existing) existing.remove();
-            
-            const toast = document.createElement('div');
-            toast.className = 'toast';
-            toast.textContent = message;
-            document.body.appendChild(toast);
-            
-            setTimeout(() => {
-                toast.style.opacity = '0';
-                setTimeout(() => toast.remove(), 300);
-            }, 3000);
-        }
-        
-        // ランキング読み込み
-        function loadRanking(period) {
-            const demoRanking = [
-                { country: 'Japan', count: 1234 },
-                { country: 'United States', count: 987 },
-                { country: 'Korea', count: 654 },
-                { country: 'China', count: 432 },
-                { country: 'Germany', count: 321 }
-            ];
-            
-            const html = demoRanking.map((item, i) => 
-                `<li><span>${i + 1}. ${item.country}</span> <strong>${item.count}</strong></li>`
-            ).join('');
-            
-            document.getElementById('rankingList').innerHTML = html;
-        }
-        
-        // 初期化
-        document.addEventListener('DOMContentLoaded', () => {
-            console.log('Starting TePlace...');
-            initMap();
-            setupUI();
-            loadRanking('today');
-            console.log('TePlace ready!');
-        });
-    </script>
+            <div class="floors">
+                <div class="floor-card">
+                    <div class="floor-number">1F</div>
+                    <h3 class="floor-title">Casual Rich</h3>
+                    <p class="floor-description">明るく開放的な1階フロアでは、デイリーに着こなせるカジュアルウェアから、特別な日のおでかけ着まで幅広く取り揃えております。</p>
+                </div>
+                <div class="floor-card">
+                    <div class="floor-number">2F</div>
+                    <h3 class="floor-title">Luxury Collection</h3>
+                    <p class="floor-description">落ち着いた雰囲気の2階フロアには、厳選されたラグジュアリーコレクションを展開。特別な装いをお探しの方のための上質な空間です。</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ブランド -->
+    <section id="brands" class="brands fade-in">
+        <div class="container">
+            <h2 class="section-title">BRANDS</h2>
+            <p class="section-subtitle">取り扱いブランド</p>
+            <div class="brand-list">
+                <div class="brand-item"><span>Max Mara</span></div>
+                <div class="brand-item"><span>ALDRIDGE</span></div>
+                <div class="brand-item"><span>koyuki</span></div>
+                <div class="brand-item"><span>PRIDE</span></div>
+                <div class="brand-item"><span>poushal</span></div>
+                <div class="brand-item"><span>SUTSESO</span></div>
+                <div class="brand-item"><span>frontyard</span></div>
+                <div class="brand-item"><span>etc...</span></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 予約セクション -->
+    <section id="reservation" class="reservation fade-in">
+        <div class="container">
+            <h2 class="section-title">RESERVATION</h2>
+            <p class="section-subtitle">ご予約・お問い合わせ</p>
+            <div class="reservation-content">
+                <div class="reservation-info">
+                    <h3>ご予約について</h3>
+                    <p>お客様のご都合に合わせて、ゆっくりとお買い物をお楽しみいただけるよう事前のご予約も承っております。</p>
+                    <div class="reservation-methods">
+                        <div class="method-card">
+                            <i class="fas fa-phone-alt" style="font-size: 2rem; color: #000; margin-bottom: 1rem;"></i>
+                            <h4>お電話でのご予約</h4>
+                            <p class="phone-number">0575-33-0311</p>
+                            <p class="hours-note">受付時間：営業時間内</p>
+                        </div>
+                        <div class="method-card">
+                            <i class="fab fa-line" style="font-size: 2rem; color: #00c300; margin-bottom: 1rem;"></i>
+                            <h4>LINEでのご予約</h4>
+                            <a href="https://page.line.me/vmp9151a" class="reservation-btn line-btn" target="_blank">
+                                <i class="fab fa-line"></i> LINEで予約する
+                            </a>
+                            <p class="hours-note">24時間受付</p>
+                        </div>
+                        <div class="method-card">
+                            <i class="fab fa-instagram" style="font-size: 2rem; color: #e4405f; margin-bottom: 1rem;"></i>
+                            <h4>Instagramでのご予約</h4>
+                            <a href="https://www.instagram.com/ichihiro137/" class="reservation-btn instagram-btn" target="_blank">
+                                <i class="fab fa-instagram"></i> DMで予約する
+                            </a>
+                            <p class="hours-note">24時間受付</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- アクセス -->
+    <section id="access" class="access fade-in">
+        <div class="container">
+            <h2 class="section-title">ACCESS</h2>
+            <p class="section-subtitle">アクセス情報</p>
+            <div class="access-content">
+                <div class="access-info">
+                    <div class="info-item">
+                        <div class="info-label">Address</div>
+                        <div class="info-value">〒501-3744<br>岐阜県美濃市段町137</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Phone</div>
+                        <div class="info-value">0575-33-0311</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">営業時間</div>
+                        <div class="info-value">
+                            <table class="hours-table">
+                                <tr><td>月曜日</td><td>10:00 - 20:00</td></tr>
+                                <tr><td>火曜日</td><td>10:00 - 20:00</td></tr>
+                                <tr><td>水曜日</td><td class="closed">定休日</td></tr>
+                                <tr><td>木曜日</td><td>10:00 - 21:00</td></tr>
+                                <tr><td>金曜日</td><td>10:00 - 21:00</td></tr>
+                                <tr><td>土曜日</td><td>10:00 - 20:00</td></tr>
+                                <tr><td>日曜日</td><td>10:00 - 20:00</td></tr>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Access</div>
+                        <div class="info-value">長良川鉄道 美濃市駅より徒歩約10分<br>駐車場完備</div>
+                    </div>
+                </div>
+                <div class="map-container">
+                    <div class="map-placeholder">
+                        <p>Google Maps</p>
+                        <a href="https://maps.app.goo.gl/M4m45B4nrcQZveqE7" target="_blank">地図を開く →</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SNS / Contact -->
+    <section id="contact" class="sns fade-in">
+        <div class="container">
+            <h2 class="section-title">FOLLOW US</h2>
+            <p class="section-subtitle">最新情報はこちらから</p>
+            <div class="sns-links">
+                <a href="https://www.instagram.com/ichihiro137/" class="sns-link instagram-colored" target="_blank">
+                    <i class="fab fa-instagram"></i>
+                    <span>Instagram</span>
+                </a>
+                <a href="https://www.facebook.com/p/%E3%82%A4%E3%83%81%E3%83%92%E3%83%AD-100054220611964/" class="sns-link facebook-colored" target="_blank">
+                    <i class="fab fa-facebook-f"></i>
+                    <span>Facebook</span>
+                </a>
+                <a href="https://page.line.me/vmp9151a" class="sns-link line-colored" target="_blank">
+                    <i class="fab fa-line"></i>
+                    <span>LINE</span>
+                </a>
+                <a href="https://ichihiromino.stores.jp" class="sns-link store-colored" target="_blank">
+                    <i class="fas fa-shopping-bag"></i>
+                    <span>Online Store</span>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- フッター -->
+    <footer>
+        <div class="footer-content">
+            <div class="footer-logo">ICHIHIRO</div>
+            <div class="footer-info">
+                <span>岐阜県美濃市段町137</span>
+                <span>TEL: 0575-33-0311</span>
+                <span>定休日: 水曜日</span>
+            </div>
+            <div class="copyright">&copy; 2025 ICHIHIRO. All Rights Reserved.</div>
+        </div>
+    </footer>
+
+    <!-- JavaScript -->
+    <script src="main.js"></script>
 </body>
 </html>
