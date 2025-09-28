@@ -422,122 +422,199 @@
         
         // 東京にピクセルアートを描画
         function drawTokyoPixelArt() {
-            // 大きな東京タワー（詳細版）
-            const tokyoTowerLarge = [
-                ['', '', '', '', '#ff0000', '', '', '', ''],
-                ['', '', '', '#ff0000', '#ff0000', '#ff0000', '', '', ''],
-                ['', '', '#ffffff', '#ff0000', '#ff0000', '#ff0000', '#ffffff', '', ''],
-                ['', '#ff0000', '#ffffff', '#ff0000', '#ff0000', '#ff0000', '#ffffff', '#ff0000', ''],
-                ['', '', '#ffffff', '#ff0000', '#ff0000', '#ff0000', '#ffffff', '', ''],
-                ['', '', '#ff0000', '#ffffff', '#ff0000', '#ffffff', '#ff0000', '', ''],
-                ['', '#ff0000', '#ff0000', '#ffffff', '#ff0000', '#ffffff', '#ff0000', '#ff0000', ''],
-                ['#ff0000', '#ff0000', '#ff0000', '#ffffff', '#ff0000', '#ffffff', '#ff0000', '#ff0000', '#ff0000'],
-                ['', '', '#ff0000', '#ff0000', '#ff0000', '#ff0000', '#ff0000', '', ''],
-                ['', '#ff0000', '#ff0000', '#ff0000', '#ff0000', '#ff0000', '#ff0000', '#ff0000', ''],
-                ['#ff0000', '#ff0000', '#ff0000', '#ff0000', '#ff0000', '#ff0000', '#ff0000', '#ff0000', '#ff0000']
+            // 東京タワー
+            const tokyoTower = [
+                ['', '#ff0000', ''],
+                ['#ff0000', '#ff0000', '#ff0000'],
+                ['', '#ff0000', ''],
+                ['#ff0000', '#ff0000', '#ff0000'],
+                ['', '#ff0000', '']
             ];
-            drawPattern(35.6586, 139.7454, tokyoTowerLarge);
+            drawPattern(35.6586, 139.7454, tokyoTower);
             
-            // 詳細な富士山
-            const mtFujiDetailed = [
-                ['', '', '', '', '', '#ffffff', '', '', '', '', ''],
-                ['', '', '', '', '#ffffff', '#ffffff', '#ffffff', '', '', '', ''],
-                ['', '', '', '#ffffff', '#ffffff', '#87ceeb', '#ffffff', '#ffffff', '', '', ''],
-                ['', '', '#ffffff', '#ffffff', '#87ceeb', '#87ceeb', '#87ceeb', '#ffffff', '#ffffff', '', ''],
-                ['', '#4169e1', '#ffffff', '#87ceeb', '#87ceeb', '#87ceeb', '#87ceeb', '#87ceeb', '#ffffff', '#4169e1', ''],
-                ['#4169e1', '#4169e1', '#4169e1', '#87ceeb', '#87ceeb', '#87ceeb', '#87ceeb', '#87ceeb', '#4169e1', '#4169e1', '#4169e1'],
-                ['#4169e1', '#4169e1', '#4169e1', '#4169e1', '#4169e1', '#4169e1', '#4169e1', '#4169e1', '#4169e1', '#4169e1', '#4169e1'],
-                ['#228b22', '#228b22', '#4169e1', '#4169e1', '#4169e1', '#4169e1', '#4169e1', '#4169e1', '#4169e1', '#228b22', '#228b22'],
-                ['#228b22', '#228b22', '#228b22', '#228b22', '#228b22', '#228b22', '#228b22', '#228b22', '#228b22', '#228b22', '#228b22']
+            // 富士山
+            const mtFuji = [
+                ['', '', '#ffffff', '', ''],
+                ['', '#ffffff', '#ffffff', '#ffffff', ''],
+                ['#4169e1', '#ffffff', '#ffffff', '#ffffff', '#4169e1'],
+                ['#4169e1', '#4169e1', '#4169e1', '#4169e1', '#4169e1']
             ];
-            drawPattern(35.6700, 139.7000, mtFujiDetailed);
+            drawPattern(35.6700, 139.7000, mtFuji);
             
-            // 大きな桜の木
-            const sakuraTree = [
-                ['', '', '#ffb7c5', '#ffb7c5', '#ffb7c5', '#ffb7c5', '#ffb7c5', '', ''],
-                ['', '#ffb7c5', '#ff69b4', '#ffb7c5', '#ff69b4', '#ffb7c5', '#ff69b4', '#ffb7c5', ''],
-                ['#ffb7c5', '#ff69b4', '#ffb7c5', '#ff69b4', '#ffb7c5', '#ff69b4', '#ffb7c5', '#ff69b4', '#ffb7c5'],
-                ['#ffb7c5', '#ffb7c5', '#ff69b4', '#ffb7c5', '#ff69b4', '#ffb7c5', '#ff69b4', '#ffb7c5', '#ffb7c5'],
-                ['', '#ffb7c5', '#ffb7c5', '#ff69b4', '#ffb7c5', '#ff69b4', '#ffb7c5', '#ffb7c5', ''],
-                ['', '', '', '', '#8b4513', '', '', '', ''],
-                ['', '', '', '', '#8b4513', '', '', '', ''],
-                ['', '', '', '#8b4513', '#8b4513', '#8b4513', '', '', ''],
-                ['', '', '#8b4513', '#8b4513', '#8b4513', '#8b4513', '#8b4513', '', ''],
-                ['#228b22', '#228b22', '#228b22', '#8b4513', '#8b4513', '#8b4513', '#228b22', '#228b22', '#228b22']
+            // 桜
+            const sakura = [
+                ['', '#ffb7c5', '#ffb7c5', '#ffb7c5', ''],
+                ['#ffb7c5', '#ff69b4', '#ff69b4', '#ff69b4', '#ffb7c5'],
+                ['', '', '#8b4513', '', ''],
+                ['', '', '#8b4513', '', '']
             ];
-            drawPattern(35.6800, 139.7600, sakuraTree);
+            drawPattern(35.6800, 139.7600, sakura);
             
-            // 詳細なスカイツリー
-            const skyTreeDetailed = [
-                ['', '', '', '#87ceeb', '', '', ''],
-                ['', '', '#87ceeb', '#87ceeb', '#87ceeb', '', ''],
-                ['', '#87ceeb', '#ffffff', '#87ceeb', '#ffffff', '#87ceeb', ''],
-                ['', '#87ceeb', '#87ceeb', '#87ceeb', '#87ceeb', '#87ceeb', ''],
-                ['', '', '#708090', '#708090', '#708090', '', ''],
-                ['', '', '#708090', '#708090', '#708090', '', ''],
-                ['', '#708090', '#708090', '#708090', '#708090', '#708090', ''],
-                ['', '#708090', '#ffffff', '#708090', '#ffffff', '#708090', ''],
-                ['#708090', '#708090', '#708090', '#708090', '#708090', '#708090', '#708090'],
-                ['#708090', '#708090', '#708090', '#708090', '#708090', '#708090', '#708090']
+            // 寿司
+            const sushi = [
+                ['', '#ff6347', '#ff6347', ''],
+                ['#ffffff', '#ffffff', '#ffffff', '#ffffff']
             ];
-            drawPattern(35.7100, 139.8107, skyTreeDetailed);
+            drawPattern(35.6500, 139.7300, sushi);
             
-            // 寿司セット
-            const sushiSet = [
-                ['#ff6347', '#ff6347', '#ff6347', '', '#ffa500', '#ffa500', '', '#ff69b4', '#ff69b4'],
-                ['#ffffff', '#ffffff', '#ffffff', '', '#ffffff', '#ffffff', '', '#ffffff', '#ffffff'],
-                ['', '', '', '', '', '', '', '', ''],
-                ['#8b4513', '#8b4513', '#8b4513', '#8b4513', '#8b4513', '#8b4513', '#8b4513', '#8b4513', '#8b4513']
+            // 新幹線
+            const shinkansen = [
+                ['#4169e1', '#4169e1', '#4169e1', '#4169e1', '#4169e1'],
+                ['#ffffff', '#4169e1', '#ffffff', '#4169e1', '#ffffff']
             ];
-            drawPattern(35.6500, 139.7300, sushiSet);
+            drawPattern(35.6850, 139.7400, shinkansen);
             
-            // ラーメン丼（詳細）
-            const ramenBowl = [
-                ['', '#8b4513', '#8b4513', '#8b4513', '#8b4513', '#8b4513', '#8b4513', ''],
-                ['#8b4513', '#ffd700', '#ffd700', '#ffd700', '#ffd700', '#ffd700', '#ffd700', '#8b4513'],
-                ['#8b4513', '#ffd700', '#ff6347', '#228b22', '#ffffff', '#ffa500', '#ffd700', '#8b4513'],
-                ['#8b4513', '#ffd700', '#ffd700', '#ff69b4', '#ffd700', '#ffd700', '#ffd700', '#8b4513'],
-                ['', '#8b4513', '#8b4513', '#8b4513', '#8b4513', '#8b4513', '#8b4513', '']
+            totalTileCount = 50; // 初期タイル数
+            document.getElementById('statTotal').textContent = totalTileCount;
+        }
+        
+        // パターン描画ヘルパー
+        function drawPattern(baseLat, baseLng, pattern) {
+            pattern.forEach((row, y) => {
+                row.forEach((color, x) => {
+                    if (color && color !== '') {
+                        const lat = baseLat - (y * TILE_SIZE * 1.5);
+                        const lng = baseLng + (x * TILE_SIZE * 1.5);
+                        drawTile(lat, lng, color, 0.9);
+                    }
+                });
+            });
+        }
+        
+        // 地図クリック処理
+        function onMapClick(e) {
+            // クールダウンチェック
+            if (Date.now() < cooldownEnd) {
+                const remaining = Math.ceil((cooldownEnd - Date.now()) / 1000);
+                showToast(`Wait ${remaining} seconds!`);
+                return;
+            }
+            
+            // タイル描画
+            drawTile(e.latlng.lat, e.latlng.lng, currentColor);
+            
+            // カウント更新
+            myTileCount++;
+            totalTileCount++;
+            document.getElementById('statMine').textContent = myTileCount;
+            document.getElementById('statTotal').textContent = totalTileCount;
+            
+            // クールダウン開始
+            startCooldown();
+            
+            // Google Analytics イベント
+            if (typeof gtag !== 'undefined') {
+                gtag('event', 'place_tile', {
+                    'country': currentCountry,
+                    'color': currentColor
+                });
+            }
+        }
+        
+        // クールダウン処理
+        function startCooldown() {
+            cooldownEnd = Date.now() + 5000; // 5秒
+            const cooldownFill = document.getElementById('cooldownFill');
+            const cooldownText = document.getElementById('cooldownText');
+            
+            const timer = setInterval(() => {
+                const remaining = cooldownEnd - Date.now();
+                if (remaining <= 0) {
+                    cooldownFill.style.width = '0%';
+                    cooldownText.textContent = 'Ready!';
+                    clearInterval(timer);
+                } else {
+                    const percent = ((5000 - remaining) / 5000) * 100;
+                    cooldownFill.style.width = percent + '%';
+                    cooldownText.textContent = Math.ceil(remaining / 1000) + 's';
+                }
+            }, 100);
+        }
+        
+        // UI設定
+        function setupUI() {
+            // カラーピッカー
+            const picker = document.getElementById('colorPicker');
+            const hex = document.getElementById('colorHex');
+            
+            picker.addEventListener('input', (e) => {
+                currentColor = e.target.value;
+                hex.value = e.target.value;
+            });
+            
+            hex.addEventListener('input', (e) => {
+                if (/^#[0-9a-f]{6}$/i.test(e.target.value)) {
+                    currentColor = e.target.value;
+                    picker.value = e.target.value;
+                }
+            });
+            
+            // 国選択
+            document.getElementById('countrySelect').addEventListener('change', (e) => {
+                currentCountry = e.target.value;
+            });
+            
+            // タブ切り替え
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    loadRanking(tab.dataset.period);
+                });
+            });
+            
+            // オンラインカウンター更新
+            updateOnlineCount();
+            setInterval(updateOnlineCount, 5000);
+        }
+        
+        // オンラインカウント更新
+        function updateOnlineCount() {
+            const online = 200 + Math.floor(Math.random() * 500);
+            document.getElementById('statOnline').textContent = online;
+        }
+        
+        // トースト表示
+        function showToast(message) {
+            const existing = document.querySelector('.toast');
+            if (existing) existing.remove();
+            
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+        
+        // ランキング読み込み
+        function loadRanking(period) {
+            const demoRanking = [
+                { country: 'Japan', count: 1234 },
+                { country: 'United States', count: 987 },
+                { country: 'Korea', count: 654 },
+                { country: 'China', count: 432 },
+                { country: 'Germany', count: 321 }
             ];
-            drawPattern(35.6900, 139.7100, ramenBowl);
             
-            // 大きな招き猫
-            const manekinekoBig = [
-                ['', '#ffffff', '', '', '', '#ffffff', ''],
-                ['#ffffff', '#ffffff', '#ffffff', '#ffffff', '#ffffff', '#ffffff', '#ffffff'],
-                ['#ffffff', '#000000', '#ffffff', '#ffffff', '#ffffff', '#000000', '#ffffff'],
-                ['#ffffff', '#ffffff', '#ffffff', '#ff69b4', '#ffffff', '#ffffff', '#ffffff'],
-                ['#ffffff', '#ffffff', '#ff0000', '#ff0000', '#ff0000', '#ffffff', '#ffffff'],
-                ['', '#ffffff', '#ffffff', '#ffffff', '#ffffff', '#ffffff', ''],
-                ['', '#ffffff', '', '#ffd700', '', '#ffffff', ''],
-                ['', '#ffffff', '#ffd700', '#ffd700', '#ffd700', '#ffffff', '']
-            ];
-            drawPattern(35.6600, 139.7700, manekinekoBig);
+            const html = demoRanking.map((item, i) => 
+                `<li><span>${i + 1}. ${item.country}</span> <strong>${item.count}</strong></li>`
+            ).join('');
             
-            // 新幹線N700系（詳細）
-            const shinkansenN700 = [
-                ['', '', '', '#4169e1', '#4169e1', '#4169e1', '#4169e1', '#4169e1', ''],
-                ['', '', '#4169e1', '#ffffff', '#ffffff', '#ffffff', '#ffffff', '#ffffff', '#4169e1'],
-                ['', '#4169e1', '#ffffff', '#4169e1', '#4169e1', '#4169e1', '#4169e1', '#ffffff', '#ffffff'],
-                ['#4169e1', '#ffffff', '#ffffff', '#000000', '#ffffff', '#000000', '#ffffff', '#ffffff', '#ffffff'],
-                ['#708090', '#708090', '#000000', '#000000', '#000000', '#000000', '#000000', '#000000', '#000000']
-            ];
-            drawPattern(35.6850, 139.7400, shinkansenN700);
-            
-            // 大きな鳥居
-            const toriiBig = [
-                ['#ff0000', '#ff0000', '#ff0000', '#ff0000', '#ff0000', '#ff0000', '#ff0000', '#ff0000', '#ff0000'],
-                ['#ff0000', '#ff0000', '#ff0000', '#ff0000', '#ff0000', '#ff0000', '#ff0000', '#ff0000', '#ff0000'],
-                ['', '', '#ff0000', '', '', '', '#ff0000', '', ''],
-                ['', '', '#ff0000', '', '', '', '#ff0000', '', ''],
-                ['', '', '#ff0000', '#ff0000', '#ff0000', '#ff0000', '#ff0000', '', ''],
-                ['', '', '#ff0000', '', '', '', '#ff0000', '', ''],
-                ['', '', '#ff0000', '', '', '', '#ff0000', '', ''],
-                ['', '', '#ff0000', '', '', '', '#ff0000', '', '']
-            ];
-            drawPattern(35.6750, 139.7800, toriiBig);
-            
-            // 日本の城（詳細）
-            const japaneseCastle = [
-                ['', '', '', '', '#ffffff', '', '', '', ''],
-                ['', '', '', '#ffffff', '#ffffff'
+            document.getElementById('rankingList').innerHTML = html;
+        }
+        
+        // 初期化
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('Starting TePlace...');
+            initMap();
+            setupUI();
+            loadRanking('today');
+            console.log('TePlace ready!');
+        });
+    </script>
+</body>
+</html>
